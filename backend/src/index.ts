@@ -17,12 +17,9 @@ const PORT = process.env.PORT || 3001
 // Middleware
 app.use(
 	cors({
-		origin: [
-			'https://ailean-assignment.vercel.app',
-			'http://localhost:3000',
-			'http://localhost:3001',
-			process.env.FRONTEND_URL,
-		].filter((url): url is string => Boolean(url)), // Remove undefined values with type guard
+		origin: [process.env.FRONTEND_URL].filter((url): url is string =>
+			Boolean(url)
+		), 
 		credentials: true,
 	})
 )
