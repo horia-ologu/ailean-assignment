@@ -9,10 +9,12 @@ const PORT = process.env.PORT || 3001
 // Middleware
 app.use(
 	cors({
-		origin:
-			process.env.NODE_ENV === 'production'
-				? ['https://ailean-assignment.vercel.app', 'https://*.vercel.app']
-				: true, // Allow all origins in development
+		origin: true, // Allow all origins for testing - change this for production
+		// Production CORS (commented for testing):
+		// origin:
+		// 	process.env.NODE_ENV === 'production'
+		// 		? ['https://ailean-assignment.vercel.app', 'https://*.vercel.app']
+		// 		: true,
 		credentials: true,
 	})
 )

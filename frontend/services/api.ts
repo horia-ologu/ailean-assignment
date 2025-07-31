@@ -1,11 +1,10 @@
 import axios from 'axios'
 
 // Environment variable priority: Online > Standard > Local > Default
-const API_BASE_URL =
-	process.env.NEXT_PUBLIC_ONLINE_BACKEND_URL ||
-	process.env.NEXT_PUBLIC_BACKEND_URL ||
-	process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL ||
-	'http://localhost:3001'
+const API_BASE_URL = 'https://ailean-assignment-backend-development.up.railway.app'
+// process.env.NEXT_PUBLIC_ONLINE_BACKEND_URL ||
+// process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL ||
+// 'http://localhost:3001'
 
 // Log the API base URL for debugging (only in development)
 if (process.env.NODE_ENV === 'development') {
