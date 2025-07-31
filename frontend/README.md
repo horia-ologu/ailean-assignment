@@ -20,8 +20,69 @@ A Next.js App Router frontend in TypeScript for managing agents and interacting 
 Create a `.env.local` file with:
 
 ```bash
+# Primary backend URL (used by default)
+NEXT_PUBLIC_BACKEND_URL=https://your-railway-app.up.railway.app
+
+# Alternative configurations (optional)
+NEXT_PUBLIC_ONLINE_BACKEND_URL=https://your-railway-app.up.railway.app
+NEXT_PUBLIC_LOCAL_BACKEND_URL=http://localhost:3001
+```
+
+### Environment Variable Priority:
+
+1. `NEXT_PUBLIC_ONLINE_BACKEND_URL` - Online Railway deployment
+2. `NEXT_PUBLIC_BACKEND_URL` - Standard backend URL
+3. `NEXT_PUBLIC_LOCAL_BACKEND_URL` - Local development
+4. `http://localhost:3001` - Default fallback
+
+The frontend will automatically use the highest priority URL available.
+
+### Switching Between Environments:
+
+**For Production (Railway):**
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=https://your-railway-app.up.railway.app
+```
+
+**For Local Development:**
+
+```bash
 NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
 ```
+
+**Mixed Development (Frontend local, Backend on Railway):**
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=https://your-railway-app.up.railway.app
+```
+
+## 🚀 Deployment
+
+### Vercel Deployment
+
+#### Option 1: Deploy Frontend Directory Only (Recommended)
+
+1. **Connect Repository**: In Vercel dashboard, when importing the project:
+
+   - Set **Root Directory** to `frontend`
+   - Vercel will automatically detect Next.js
+   - Environment variables will be configured in Vercel dashboard
+
+2. **Environment Variables in Vercel**:
+   ```
+   NEXT_PUBLIC_BACKEND_URL=https://your-railway-app.up.railway.app
+   ```
+
+#### Option 2: Deploy from Monorepo Root
+
+If deploying from the repository root, the `vercel.json` configuration will handle the build process automatically.
+
+#### Troubleshooting Vercel Deployment:
+
+- **Build Error**: Ensure you're deploying from the `frontend` directory or using the root `vercel.json`
+- **Environment Variables**: Add them in the Vercel dashboard under Project Settings → Environment Variables
+- **Build Command Issues**: Vercel should auto-detect Next.js, no custom build commands needed
 
 ## API Integration
 

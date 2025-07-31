@@ -1,7 +1,16 @@
 import axios from 'axios'
 
+// Environment variable priority: Online > Standard > Local > Default
 const API_BASE_URL =
-	process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'
+	process.env.NEXT_PUBLIC_ONLINE_BACKEND_URL ||
+	process.env.NEXT_PUBLIC_BACKEND_URL ||
+	process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL ||
+	'http://localhost:3001'
+
+// Log the API base URL for debugging (only in development)
+if (process.env.NODE_ENV === 'development') {
+	console.log('🔗 API Base URL:', API_BASE_URL)
+}
 
 export interface Agent {
 	id: string

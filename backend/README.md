@@ -1,6 +1,64 @@
 # Agent Management API
 
-A production-ready Express server in TypeScript for managing agents with advanced Hotel Q&A Bot functionality.
+A production-ready Express server in TypeScript for manag## 🔧 Running the Server
+
+### Development
+
+```bash
+npm run dev
+```
+
+### Production
+
+```bash
+npm run build
+npm start
+```
+
+### Environment Variables
+
+```bash
+PORT=3001                    # Server port (default: 3001)
+NODE_ENV=production         # Environment mode
+```
+
+## 🚀 Deployment
+
+### Railway Deployment
+
+This backend is configured for easy deployment on [Railway](https://railway.app):
+
+#### Railway Configuration (`railway.json`):
+
+```json
+{
+	"build": {
+		"command": "cd backend && npm install && npm run build"
+	},
+	"start": {
+		"command": "cd backend && npm start"
+	}
+}
+```
+
+#### Deployment Steps:
+
+1. **Connect Repository**: Link your GitHub repository to Railway
+2. **Configure Build**: Railway will automatically detect the `railway.json` configuration
+3. **Environment Variables**: Set production environment variables in Railway dashboard:
+   - `NODE_ENV=production`
+   - `PORT` (automatically provided by Railway)
+4. **Deploy**: Railway will build and deploy automatically
+
+#### Railway Features:
+
+- ✅ **Automatic deployments** from GitHub commits
+- ✅ **Environment variable management**
+- ✅ **Custom domains** and HTTPS
+- ✅ **Monitoring and logs**
+- ✅ **Automatic scaling**
+
+The Hotel Q&A Bot will be automatically initialized on Railway startup!nced Hotel Q&A Bot functionality.
 
 ## 🏗️ Architecture
 
@@ -103,11 +161,16 @@ NODE_ENV=production         # Environment mode
 ## 🌐 CORS Configuration
 
 - **Development**: Allows all origins
-- **Production**: Configured for Vercel deployments (`*.vercel.app`)
+- **Production**: Configured for Vercel deployments (`*.vercel.app`) and Railway hosting
+- **Custom Domains**: Easily configurable for your specific frontend URL
+
+> **Note**: Update CORS settings in `src/index.ts` if deploying to custom domains other than Vercel.
 
 ## 🏨 Hotel Q&A Examples
 
 Try asking the Hotel Q&A Bot:
+
+### Local Development:
 
 ```bash
 # Check-in time
@@ -124,6 +187,15 @@ curl -X POST http://localhost:3001/api/agents/1/ask \
 curl -X POST http://localhost:3001/api/agents/1/ask \
   -H "Content-Type: application/json" \
   -d '{"question": "How do I connect to WiFi?"}'
+```
+
+### Railway Production:
+
+```bash
+# Replace YOUR_RAILWAY_URL with your actual Railway deployment URL
+curl -X POST https://YOUR_RAILWAY_URL/api/agents/1/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What time is check-in?"}'
 ```
 
 ## 📋 Sample Responses
