@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Environment variable priority: Online > Standard > Local > Default
 const API_BASE_URL =
-	process.env.NEXT_PUBLIC_ONLINE_BACKEND_URL ||
+	process.env.NEXT_PUBLIC_BACKEND_URL ||
 	process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL ||
 	'http://localhost:3001'
 
@@ -46,6 +46,8 @@ class ApiService {
 	// Get all agents
 	async getAgents(): Promise<Agent[]> {
 		const response = await this.client.get<Agent[]>('/agents')
+		console.log('🔍 Fetched agents:', response.data)
+
 		return response.data
 	}
 

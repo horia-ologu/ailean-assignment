@@ -17,9 +17,13 @@ const PORT = process.env.PORT || 3001
 // Middleware
 app.use(
 	cors({
-		origin: [process.env.FRONTEND_URL].filter((url): url is string =>
-			Boolean(url)
-		), 
+		origin: [
+			'http://localhost:3000',
+			'http://localhost:3001',
+			'http://localhost:3002',
+			'https://ailean-assignment.vercel.app',
+			process.env.FRONTEND_URL,
+		].filter((url): url is string => Boolean(url)),
 		credentials: true,
 	})
 )
