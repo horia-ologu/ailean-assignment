@@ -11,7 +11,7 @@ app.use(
 	cors({
 		origin:
 			process.env.NODE_ENV === 'production'
-				? ['https://vercel.app', 'https://*.vercel.app']
+				? ['https://ailean-assignment.vercel.app', 'https://*.vercel.app']
 				: true, // Allow all origins in development
 		credentials: true,
 	})
