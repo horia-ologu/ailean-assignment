@@ -1,7 +1,15 @@
+import dotenv from 'dotenv'
 import express from 'express'
 import cors from 'cors'
 import routes from './routes'
 import { agentService } from './services/AgentService'
+
+// Only load .env.local in development
+if (process.env.NODE_ENV !== 'production') {
+	dotenv.config({ path: '.env.local' })
+	console.log('📁 Loaded local environment variables')
+	console.log('🌍 Frontend URL:', process.env.FRONTEND_URL || 'Not set')
+}
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -9,12 +17,8 @@ const PORT = process.env.PORT || 3001
 // Middleware
 app.use(
 	cors({
-		origin: true, // Allow all origins for testing - change this for production
-		// Production CORS (commented for testing):
-		// origin:
-		// 	process.env.NODE_ENV === 'production'
-		// 		? ['https://ailean-assignment.vercel.app', 'https://*.vercel.app']
-		// 		: true,
+		origin:
+			process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : true,
 		credentials: true,
 	})
 )
