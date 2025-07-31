@@ -4,5 +4,7 @@
 	},
 	"start": {
 		"command": "cd backend && npm start"
-	}
+	},
+	"healthcheckPath": "/api/health",
+	"healthcheckTimeout": 300
 }
