@@ -241,18 +241,18 @@ Sample Questions:
 
 ### **Agent Type Visual Indicators**
 
-| Type | Color | Badge Style |
-|------|-------|-------------|
-| Sales | Blue | `bg-blue-100 text-blue-800` |
-| Support | Purple | `bg-purple-100 text-purple-800` |
+| Type      | Color  | Badge Style                     |
+| --------- | ------ | ------------------------------- |
+| Sales     | Blue   | `bg-blue-100 text-blue-800`     |
+| Support   | Purple | `bg-purple-100 text-purple-800` |
 | Marketing | Orange | `bg-orange-100 text-orange-800` |
 
 ### **Status Visual Indicators**
 
-| Status | Color | Badge Style |
-|--------|-------|-------------|
-| Active | Green | `bg-green-100 text-green-800` |
-| Inactive | Gray | `bg-gray-100 text-gray-800` |
+| Status   | Color | Badge Style                   |
+| -------- | ----- | ----------------------------- |
+| Active   | Green | `bg-green-100 text-green-800` |
+| Inactive | Gray  | `bg-gray-100 text-gray-800`   |
 
 ### **Chat Interface Elements**
 
@@ -288,10 +288,10 @@ Sample Questions:
 
 ```json
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "installCommand": "npm install"
+	"buildCommand": "npm run build",
+	"outputDirectory": ".next",
+	"framework": "nextjs",
+	"installCommand": "npm install"
 }
 ```
 

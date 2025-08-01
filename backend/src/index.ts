@@ -18,8 +18,23 @@ const PORT = process.env.PORT || 3001
 // Middleware
 app.use(
 	cors({
-		origin:
-			process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : true,
+		origin: function (origin, callback) {
+			// Allow requests with no origin (like mobile apps or curl)
+			if (!origin) return callback(null, true)
+
+			// Define allowed origins
+			const allowedOrigins = [process.env.FRONTEND_URL]
+
+			// Remove duplicates and empty values
+			const uniqueOrigins = [...new Set(allowedOrigins.filter(Boolean))]
+
+			if (uniqueOrigins.includes(origin)) {
+				callback(null, true)
+			} else {
+				console.warn(`🚫 CORS: Blocked request from origin: ${origin}`)
+				callback(new Error('Not allowed by CORS'))
+			}
+		},
 		credentials: true,
 	})
 )
@@ -66,6 +81,15 @@ app.use(
 		res: express.Response,
 		next: express.NextFunction
 	) => {
+		// Handle CORS errors specifically
+		if (err.message === 'Not allowed by CORS') {
+			return res.status(403).json({
+				error: 'Forbidden',
+				message: 'Origin not allowed by CORS policy',
+				origin: req.headers.origin || 'unknown',
+			})
+		}
+
 		console.error('Unhandled error:', err)
 		res.status(500).json({
 			error: 'Internal server error',

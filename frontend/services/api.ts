@@ -82,7 +82,7 @@ class ApiService {
 		return response.data
 	}
 
-	// Ask a question to an agent (Hotel Q&A Bot only)
+	// Ask a question to any agent (Sales, Support, Marketing, or Hotel Q&A Bot)
 	async askQuestion(
 		agentId: string,
 		question: string

@@ -7,7 +7,7 @@ A full-stack TypeScript application featuring intelligent agent management with 
 This project implements a sophisticated agent management system with support for **Sales**, **Support**, and **Marketing** agents. The system features:
 
 - **Multi-Agent Chat System** with type-specific responses
-- **Agent Management CRUD** operations with status tracking  
+- **Agent Management CRUD** operations with status tracking
 - **Chat-Style Interface** with typing indicators and message history
 - **Agent Details Modal** with comprehensive information display
 - **JSON Database** with persistent data storage (local development)
@@ -100,33 +100,33 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
 
 ```typescript
 interface Agent {
-  id: string
-  name: string
-  type: "Sales" | "Support" | "Marketing"
-  status: "Active" | "Inactive"
-  description?: string
-  createdAt: string
+	id: string
+	name: string
+	type: 'Sales' | 'Support' | 'Marketing'
+	status: 'Active' | 'Inactive'
+	description?: string
+	createdAt: string
 }
 ```
 
 ### **Agent Types & Capabilities**
 
-| Type | Focus | Sample Responses |
-|------|-------|------------------|
-| **Sales** | Product info, pricing, purchasing | Price inquiries, product comparisons, discounts |
-| **Support** | Help, troubleshooting, issues | Technical problems, user guidance, error resolution |
-| **Marketing** | Campaigns, strategies, branding | Campaign development, audience targeting, social media |
+| Type          | Focus                             | Sample Responses                                       |
+| ------------- | --------------------------------- | ------------------------------------------------------ |
+| **Sales**     | Product info, pricing, purchasing | Price inquiries, product comparisons, discounts        |
+| **Support**   | Help, troubleshooting, issues     | Technical problems, user guidance, error resolution    |
+| **Marketing** | Campaigns, strategies, branding   | Campaign development, audience targeting, social media |
 
 ## 🔄 API Endpoints
 
-| Method | Endpoint | Description | Request Body |
-|--------|----------|-------------|--------------|
-| `GET` | `/api/agents` | Get all agents | - |
-| `GET` | `/api/agents/:id` | Get agent by ID | - |
-| `POST` | `/api/agents` | Create new agent | `{name, type, status, description?}` |
-| `PUT` | `/api/agents/:id` | Update agent | `{name?, type?, status?, description?}` |
-| `DELETE` | `/api/agents/:id` | Delete agent | - |
-| `POST` | `/api/agents/:id/ask` | Ask question to agent | `{question}` |
+| Method   | Endpoint              | Description           | Request Body                            |
+| -------- | --------------------- | --------------------- | --------------------------------------- |
+| `GET`    | `/api/agents`         | Get all agents        | -                                       |
+| `GET`    | `/api/agents/:id`     | Get agent by ID       | -                                       |
+| `POST`   | `/api/agents`         | Create new agent      | `{name, type, status, description?}`    |
+| `PUT`    | `/api/agents/:id`     | Update agent          | `{name?, type?, status?, description?}` |
+| `DELETE` | `/api/agents/:id`     | Delete agent          | -                                       |
+| `POST`   | `/api/agents/:id/ask` | Ask question to agent | `{question}`                            |
 
 ## 🌐 Deployment
 
@@ -183,18 +183,21 @@ ailean-assignment/
 ## 🧪 Testing Agent Responses
 
 ### **Sales Agent Questions**
+
 - "What's the price for this product?"
 - "Do you have any discounts?"
 - "I want to buy something"
 - "Compare your products"
 
 ### **Support Agent Questions**
+
 - "I need help with an issue"
 - "I'm having a problem"
 - "Can you support me?"
 - "There's an error"
 
 ### **Marketing Agent Questions**
+
 - "Tell me about your campaigns"
 - "Brand development strategies"
 - "Social media marketing"
