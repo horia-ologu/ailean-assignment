@@ -16,8 +16,19 @@ export default function Home() {
 	// Hardcoded Hotel Q&A Bot
 	const [hotelBotId, setHotelBotId] = useState<string | null>(null)
 	const [question, setQuestion] = useState('')
-	const [botResponse, setBotResponse] = useState<string | null>(null)
+	const [chatHistory, setChatHistory] = useState<
+		Array<{
+			id: string
+			type: 'user' | 'bot'
+			message: string
+			timestamp: string
+		}>
+	>([])
 	const [askingQuestion, setAskingQuestion] = useState(false)
+
+	// Modal state for agent details
+	const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+	const [showModal, setShowModal] = useState(false)
 
 	// Create the hardcoded Hotel Q&A Bot
 	const createHotelBot = useCallback(async () => {
@@ -92,14 +103,42 @@ export default function Home() {
 		e.preventDefault()
 		if (!question.trim() || !hotelBotId) return
 
+		const userMessage = {
+			id: Date.now().toString(),
+			type: 'user' as const,
+			message: question,
+			timestamp: new Date().toISOString(),
+		}
+
+		// Add user message to chat
+		setChatHistory((prev) => [...prev, userMessage])
+		const currentQuestion = question
+		setQuestion('')
+
 		try {
 			setAskingQuestion(true)
-			const response = await apiService.askQuestion(hotelBotId, question)
-			setBotResponse(response.answer)
-			setQuestion('')
+			const response = await apiService.askQuestion(hotelBotId, currentQuestion)
+
+			// Add bot response to chat
+			const botMessage = {
+				id: (Date.now() + 1).toString(),
+				type: 'bot' as const,
+				message: response.answer,
+				timestamp: new Date().toISOString(),
+			}
+			setChatHistory((prev) => [...prev, botMessage])
 		} catch (err) {
 			setError('Failed to ask question')
 			console.error('Error asking question:', err)
+
+			// Add error message to chat
+			const errorMessage = {
+				id: (Date.now() + 1).toString(),
+				type: 'bot' as const,
+				message: 'Sorry, I encountered an error. Please try again.',
+				timestamp: new Date().toISOString(),
+			}
+			setChatHistory((prev) => [...prev, errorMessage])
 		} finally {
 			setAskingQuestion(false)
 		}
@@ -116,12 +155,24 @@ export default function Home() {
 			// Reset hotel bot if it was deleted
 			if (id === hotelBotId) {
 				setHotelBotId(null)
-				setBotResponse(null)
+				setChatHistory([])
 			}
 		} catch (err) {
 			setError('Failed to delete agent')
 			console.error('Error deleting agent:', err)
 		}
+	}
+
+	// Open agent details modal
+	const openAgentModal = (agent: Agent) => {
+		setSelectedAgent(agent)
+		setShowModal(true)
+	}
+
+	// Close agent details modal
+	const closeAgentModal = () => {
+		setSelectedAgent(null)
+		setShowModal(false)
 	}
 
 	if (loading) {
@@ -206,7 +257,8 @@ export default function Home() {
 									{agents.map((agent) => (
 										<div
 											key={agent.id}
-											className='border rounded-lg p-4 bg-gray-50'
+											className='border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors'
+											onClick={() => openAgentModal(agent)}
 										>
 											<div className='flex justify-between items-start'>
 												<div className='flex-1'>
@@ -219,7 +271,7 @@ export default function Home() {
 														)}
 													</h4>
 													{agent.description && (
-														<p className='text-sm text-gray-600 mt-1'>
+														<p className='text-sm text-gray-600 mt-1 line-clamp-2'>
 															{agent.description}
 														</p>
 													)}
@@ -229,7 +281,10 @@ export default function Home() {
 													</p>
 												</div>
 												<button
-													onClick={() => handleDeleteAgent(agent.id)}
+													onClick={(e) => {
+														e.stopPropagation()
+														handleDeleteAgent(agent.id)
+													}}
 													className='text-red-500 hover:text-red-700 text-sm'
 												>
 													Delete
@@ -250,47 +305,137 @@ export default function Home() {
 
 						{hotelBotId ? (
 							<div>
+								{/* Chat History */}
+								<div className='bg-gray-50 border rounded-lg p-4 mb-4 h-96 overflow-y-auto'>
+									{chatHistory.length === 0 ? (
+										<div className='text-center text-gray-500 mt-8'>
+											<div className='text-4xl mb-2'>🏨</div>
+											<p>Welcome to Hotel Q&A Bot!</p>
+											<p className='text-sm'>
+												Ask me anything about our hotel services.
+											</p>
+										</div>
+									) : (
+										<div className='space-y-4'>
+											{chatHistory.map((message) => (
+												<div
+													key={message.id}
+													className={`flex ${
+														message.type === 'user'
+															? 'justify-end'
+															: 'justify-start'
+													}`}
+												>
+													<div
+														className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+															message.type === 'user'
+																? 'bg-blue-500 text-white'
+																: 'bg-white border border-gray-200 text-gray-800'
+														}`}
+													>
+														<p className='text-sm'>{message.message}</p>
+														<p
+															className={`text-xs mt-1 ${
+																message.type === 'user'
+																	? 'text-blue-100'
+																	: 'text-gray-400'
+															}`}
+														>
+															{new Date(message.timestamp).toLocaleTimeString()}
+														</p>
+													</div>
+												</div>
+											))}
+											{askingQuestion && (
+												<div className='flex justify-start'>
+													<div className='bg-white border border-gray-200 text-gray-800 px-4 py-2 rounded-lg'>
+														<div className='flex items-center space-x-1'>
+															<div className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'></div>
+															<div
+																className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
+																style={{ animationDelay: '0.1s' }}
+															></div>
+															<div
+																className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
+																style={{ animationDelay: '0.2s' }}
+															></div>
+														</div>
+													</div>
+												</div>
+											)}
+										</div>
+									)}
+								</div>
+
+								{/* Chat Input */}
 								<form onSubmit={handleAskQuestion} className='mb-6'>
-									<div className='mb-4'>
-										<label className='block text-sm font-medium text-gray-700 mb-2'>
-											Ask a question about hotel services
-										</label>
+									<div className='flex space-x-2'>
 										<textarea
 											value={question}
 											onChange={(e) => setQuestion(e.target.value)}
-											className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
-											placeholder='What are your check-in times? Do you have room service? etc.'
-											rows={3}
+											className='flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none'
+											placeholder='Ask about check-in times, amenities, room service...'
+											rows={2}
 											required
+											onKeyPress={(e) => {
+												if (e.key === 'Enter' && !e.shiftKey) {
+													e.preventDefault()
+													handleAskQuestion(e)
+												}
+											}}
 										/>
+										<button
+											type='submit'
+											disabled={askingQuestion || !question.trim()}
+											className='px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center'
+										>
+											<svg
+												className='w-5 h-5'
+												fill='none'
+												stroke='currentColor'
+												viewBox='0 0 24 24'
+											>
+												<path
+													strokeLinecap='round'
+													strokeLinejoin='round'
+													strokeWidth={2}
+													d='M12 19l9 2-9-18-9 18 9-2zm0 0v-8'
+												/>
+											</svg>
+										</button>
 									</div>
-									<button
-										type='submit'
-										disabled={askingQuestion}
-										className='w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed'
-									>
-										{askingQuestion ? 'Asking...' : 'Ask Hotel Bot'}
-									</button>
 								</form>
 
-								{botResponse && (
-									<div className='bg-green-50 border border-green-200 rounded-lg p-4'>
-										<h4 className='font-medium text-green-800 mb-2'>
-											Hotel Bot Response:
-										</h4>
-										<p className='text-green-700'>{botResponse}</p>
+								<div className='text-sm text-gray-600'>
+									<h4 className='font-medium mb-2'>💬 Try asking about:</h4>
+									<div className='grid grid-cols-2 gap-2'>
+										<button
+											onClick={() =>
+												setQuestion('What are your check-in times?')
+											}
+											className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+										>
+											⏰ Check-in times
+										</button>
+										<button
+											onClick={() => setQuestion('Do you have room service?')}
+											className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+										>
+											🍽️ Room service
+										</button>
+										<button
+											onClick={() => setQuestion('Is there free WiFi?')}
+											className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+										>
+											📶 WiFi information
+										</button>
+										<button
+											onClick={() => setQuestion('What amenities do you have?')}
+											className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+										>
+											🏊 Hotel amenities
+										</button>
 									</div>
-								)}
-
-								<div className='mt-6 text-sm text-gray-600'>
-									<h4 className='font-medium mb-2'>Try asking about:</h4>
-									<ul className='list-disc list-inside space-y-1'>
-										<li>Check-in and check-out times</li>
-										<li>Hotel amenities and services</li>
-										<li>Room service availability</li>
-										<li>Parking and WiFi information</li>
-										<li>Cancellation policies</li>
-									</ul>
 								</div>
 							</div>
 						) : (
@@ -315,6 +460,221 @@ export default function Home() {
 					Backend URL:{' '}
 					{process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'}
 				</div>
+
+				{/* Agent Details Modal */}
+				{showModal && selectedAgent && (
+					<div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+						<div className='bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
+							{/* Modal Header */}
+							<div className='flex justify-between items-center p-6 border-b'>
+								<h3 className='text-2xl font-semibold text-gray-900'>
+									Agent Details
+								</h3>
+								<button
+									onClick={closeAgentModal}
+									className='text-gray-400 hover:text-gray-600 transition-colors'
+								>
+									<svg
+										className='w-6 h-6'
+										fill='none'
+										stroke='currentColor'
+										viewBox='0 0 24 24'
+									>
+										<path
+											strokeLinecap='round'
+											strokeLinejoin='round'
+											strokeWidth={2}
+											d='M6 18L18 6M6 6l12 12'
+										/>
+									</svg>
+								</button>
+							</div>
+
+							{/* Modal Body */}
+							<div className='p-6'>
+								<div className='space-y-6'>
+									{/* Agent Name */}
+									<div>
+										<label className='block text-sm font-medium text-gray-700 mb-2'>
+											Agent Name
+										</label>
+										<div className='flex items-center'>
+											<p className='text-lg font-semibold text-gray-900'>
+												{selectedAgent.name}
+											</p>
+											{selectedAgent.name === 'Hotel Q&A Bot' && (
+												<span className='ml-3 bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full'>
+													🏨 Hardcoded Bot
+												</span>
+											)}
+										</div>
+									</div>
+
+									{/* Agent ID */}
+									<div>
+										<label className='block text-sm font-medium text-gray-700 mb-2'>
+											Agent ID
+										</label>
+										<p className='text-sm text-gray-600 font-mono bg-gray-50 px-3 py-2 rounded border'>
+											{selectedAgent.id}
+										</p>
+									</div>
+
+									{/* Description */}
+									<div>
+										<label className='block text-sm font-medium text-gray-700 mb-2'>
+											Description
+										</label>
+										{selectedAgent.description ? (
+											<p className='text-gray-700 bg-gray-50 px-4 py-3 rounded border leading-relaxed'>
+												{selectedAgent.description}
+											</p>
+										) : (
+											<p className='text-gray-500 italic'>
+												No description provided
+											</p>
+										)}
+									</div>
+
+									{/* Creation Date */}
+									<div>
+										<label className='block text-sm font-medium text-gray-700 mb-2'>
+											Created At
+										</label>
+										<div className='text-gray-700'>
+											<p className='font-medium'>
+												{new Date(selectedAgent.createdAt).toLocaleDateString(
+													'en-US',
+													{
+														weekday: 'long',
+														year: 'numeric',
+														month: 'long',
+														day: 'numeric',
+													}
+												)}
+											</p>
+											<p className='text-sm text-gray-500'>
+												{new Date(selectedAgent.createdAt).toLocaleTimeString(
+													'en-US',
+													{
+														hour: '2-digit',
+														minute: '2-digit',
+														second: '2-digit',
+													}
+												)}
+											</p>
+										</div>
+									</div>
+
+									{/* Agent Type */}
+									<div>
+										<label className='block text-sm font-medium text-gray-700 mb-2'>
+											Agent Type
+										</label>
+										<div className='flex items-center space-x-2'>
+											{selectedAgent.name === 'Hotel Q&A Bot' ? (
+												<>
+													<span className='bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm'>
+														🤖 Q&A Bot
+													</span>
+													<span className='bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm'>
+														🏨 Hotel Services
+													</span>
+												</>
+											) : (
+												<span className='bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm'>
+													👤 Custom Agent
+												</span>
+											)}
+										</div>
+									</div>
+
+									{/* Capabilities (for Hotel Q&A Bot) */}
+									{selectedAgent.name === 'Hotel Q&A Bot' && (
+										<div>
+											<label className='block text-sm font-medium text-gray-700 mb-2'>
+												Bot Capabilities
+											</label>
+											<div className='grid grid-cols-2 gap-3'>
+												<div className='bg-blue-50 p-3 rounded border'>
+													<div className='text-blue-600 text-sm font-medium'>
+														⏰ Check-in/out
+													</div>
+													<div className='text-blue-500 text-xs'>
+														Operating hours & procedures
+													</div>
+												</div>
+												<div className='bg-green-50 p-3 rounded border'>
+													<div className='text-green-600 text-sm font-medium'>
+														🍽️ Room Service
+													</div>
+													<div className='text-green-500 text-xs'>
+														Menu & availability
+													</div>
+												</div>
+												<div className='bg-purple-50 p-3 rounded border'>
+													<div className='text-purple-600 text-sm font-medium'>
+														📶 WiFi & Tech
+													</div>
+													<div className='text-purple-500 text-xs'>
+														Internet & connectivity
+													</div>
+												</div>
+												<div className='bg-orange-50 p-3 rounded border'>
+													<div className='text-orange-600 text-sm font-medium'>
+														🏊 Amenities
+													</div>
+													<div className='text-orange-500 text-xs'>
+														Pool, gym, spa services
+													</div>
+												</div>
+												<div className='bg-red-50 p-3 rounded border'>
+													<div className='text-red-600 text-sm font-medium'>
+														🚗 Parking
+													</div>
+													<div className='text-red-500 text-xs'>
+														Availability & pricing
+													</div>
+												</div>
+												<div className='bg-yellow-50 p-3 rounded border'>
+													<div className='text-yellow-600 text-sm font-medium'>
+														📋 Policies
+													</div>
+													<div className='text-yellow-500 text-xs'>
+														Cancellation & rules
+													</div>
+												</div>
+											</div>
+										</div>
+									)}
+								</div>
+							</div>
+
+							{/* Modal Footer */}
+							<div className='flex justify-between items-center p-6 border-t bg-gray-50'>
+								<button
+									onClick={closeAgentModal}
+									className='px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors'
+								>
+									Close
+								</button>
+								<button
+									onClick={() => {
+										if (
+											confirm('Are you sure you want to delete this agent?')
+										) {
+											handleDeleteAgent(selectedAgent.id)
+											closeAgentModal()
+										}
+									}}
+									className='px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors'
+								>
+									Delete Agent
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	)
