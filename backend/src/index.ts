@@ -19,20 +19,42 @@ const PORT = process.env.PORT || 3001
 app.use(
 	cors({
 		origin: function (origin, callback) {
-			// Allow requests with no origin (like mobile apps or curl)
-			if (!origin) return callback(null, true)
+			// In production: strict CORS - only allow exact frontend URL
+			if (process.env.NODE_ENV === 'production') {
+				// Block requests with no origin in production
+				if (!origin) {
+					console.warn(
+						`🚫 CORS (Production): Blocked request with no origin header`
+					)
+					return callback(new Error('Not allowed by CORS'))
+				}
 
-			// Define allowed origins
-			const allowedOrigins = [process.env.FRONTEND_URL]
+				// Only allow the exact frontend URL from environment in production
+				const authorizedOrigin = process.env.FRONTEND_URL
 
-			// Remove duplicates and empty values
-			const uniqueOrigins = [...new Set(allowedOrigins.filter(Boolean))]
+				if (!authorizedOrigin) {
+					console.error(
+						'❌ FRONTEND_URL not configured in production environment'
+					)
+					return callback(new Error('Not allowed by CORS'))
+				}
 
-			if (uniqueOrigins.includes(origin)) {
-				callback(null, true)
+				if (origin === authorizedOrigin) {
+					callback(null, true)
+				} else {
+					console.warn(
+						`🚫 CORS (Production): Blocked request from unauthorized origin: ${origin}`
+					)
+					callback(new Error('Not allowed by CORS'))
+				}
 			} else {
-				console.warn(`🚫 CORS: Blocked request from origin: ${origin}`)
-				callback(new Error('Not allowed by CORS'))
+				// In development/other environments: open CORS for easier development
+				console.log(
+					`✅ CORS (Development): Allowing request from origin: ${
+						origin || 'no origin'
+					}`
+				)
+				callback(null, true)
 			}
 		},
 		credentials: true,
