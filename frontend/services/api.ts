@@ -14,12 +14,16 @@ console.log('🔗 API Base URL:', API_BASE_URL)
 export interface Agent {
 	id: string
 	name: string
+	type: 'Sales' | 'Support' | 'Marketing'
+	status: 'Active' | 'Inactive'
 	description?: string
 	createdAt: string
 }
 
 export interface CreateAgentRequest {
 	name: string
+	type: 'Sales' | 'Support' | 'Marketing'
+	status: 'Active' | 'Inactive'
 	description?: string
 }
 

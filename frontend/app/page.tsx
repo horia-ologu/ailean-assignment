@@ -18,6 +18,12 @@ export default function Home() {
 
 	// Form state for creating new agents
 	const [newAgentName, setNewAgentName] = useState('')
+	const [newAgentType, setNewAgentType] = useState<
+		'Sales' | 'Support' | 'Marketing'
+	>('Sales')
+	const [newAgentStatus, setNewAgentStatus] = useState<'Active' | 'Inactive'>(
+		'Active'
+	)
 	const [newAgentDescription, setNewAgentDescription] = useState('')
 	const [creating, setCreating] = useState(false)
 
@@ -49,6 +55,8 @@ export default function Home() {
 		try {
 			const hotelBot = await apiService.createAgent({
 				name: 'The Grand Arosa Q&A Bot',
+				type: 'Support',
+				status: 'Active',
 				description:
 					'A helpful bot that answers questions about The Grand Arosa hotel services, amenities, and policies.',
 			})
@@ -116,10 +124,14 @@ export default function Home() {
 			setCreating(true)
 			const newAgent = await apiService.createAgent({
 				name: newAgentName,
+				type: newAgentType,
+				status: newAgentStatus,
 				description: newAgentDescription || undefined,
 			})
 			setAgents((prev) => [...prev, newAgent])
 			setNewAgentName('')
+			setNewAgentType('Sales')
+			setNewAgentStatus('Active')
 			setNewAgentDescription('')
 		} catch (err) {
 			setError('Failed to create agent')
@@ -161,18 +173,35 @@ export default function Home() {
 				timestamp: new Date().toISOString(),
 			}
 			setChatHistory((prev) => [...prev, botMessage])
-		} catch (err) {
-			setError('Failed to ask question')
+		} catch (err: any) {
 			console.error('Error asking question:', err)
 
+			let errorMessage = 'Sorry, I encountered an error. Please try again.'
+
+			// Handle specific error cases
+			if (err.response?.status === 403) {
+				const errorData = err.response.data
+				if (errorData.status === 'Inactive') {
+					errorMessage = `Sorry, I'm currently inactive and cannot answer questions right now.`
+				} else if (errorData.error) {
+					errorMessage = errorData.error
+				}
+			} else if (err.response?.status === 404) {
+				errorMessage = 'Agent not found. Please select a different agent.'
+			} else if (err.response?.status >= 500) {
+				errorMessage = 'Server error. Please try again in a moment.'
+			}
+
+			setError('Failed to ask question')
+
 			// Add error message to chat
-			const errorMessage = {
+			const errorChatMessage = {
 				id: (Date.now() + 1).toString(),
 				type: 'bot' as const,
-				message: 'Sorry, I encountered an error. Please try again.',
+				message: errorMessage,
 				timestamp: new Date().toISOString(),
 			}
-			setChatHistory((prev) => [...prev, errorMessage])
+			setChatHistory((prev) => [...prev, errorChatMessage])
 		} finally {
 			setAskingQuestion(false)
 		}
@@ -304,6 +333,41 @@ export default function Home() {
 							</div>
 							<div className='mb-4'>
 								<label className='block text-sm font-medium text-gray-700 mb-2'>
+									Agent Type
+								</label>
+								<select
+									value={newAgentType}
+									onChange={(e) =>
+										setNewAgentType(
+											e.target.value as 'Sales' | 'Support' | 'Marketing'
+										)
+									}
+									className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+									required
+								>
+									<option value='Sales'>Sales</option>
+									<option value='Support'>Support</option>
+									<option value='Marketing'>Marketing</option>
+								</select>
+							</div>
+							<div className='mb-4'>
+								<label className='block text-sm font-medium text-gray-700 mb-2'>
+									Agent Status
+								</label>
+								<select
+									value={newAgentStatus}
+									onChange={(e) =>
+										setNewAgentStatus(e.target.value as 'Active' | 'Inactive')
+									}
+									className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+									required
+								>
+									<option value='Active'>Active</option>
+									<option value='Inactive'>Inactive</option>
+								</select>
+							</div>
+							<div className='mb-4'>
+								<label className='block text-sm font-medium text-gray-700 mb-2'>
 									Description (optional)
 								</label>
 								<textarea
@@ -348,6 +412,28 @@ export default function Home() {
 															</span>
 														)}
 													</h4>
+													<div className='flex gap-2 mt-1'>
+														<span
+															className={`text-xs px-2 py-1 rounded ${
+																agent.type === 'Sales'
+																	? 'bg-blue-100 text-blue-800'
+																	: agent.type === 'Support'
+																	? 'bg-purple-100 text-purple-800'
+																	: 'bg-orange-100 text-orange-800'
+															}`}
+														>
+															{agent.type}
+														</span>
+														<span
+															className={`text-xs px-2 py-1 rounded ${
+																agent.status === 'Active'
+																	? 'bg-green-100 text-green-800'
+																	: 'bg-gray-100 text-gray-800'
+															}`}
+														>
+															{agent.status}
+														</span>
+													</div>
 													{agent.description && (
 														<p className='text-sm text-gray-600 mt-1 line-clamp-2'>
 															{agent.description}
@@ -679,6 +765,40 @@ export default function Home() {
 										</div>
 									</div>
 
+									{/* Agent Type and Status */}
+									<div className='grid grid-cols-2 gap-4'>
+										<div>
+											<label className='block text-sm font-medium text-gray-700 mb-2'>
+												Type
+											</label>
+											<span
+												className={`inline-block px-3 py-2 rounded-full text-sm font-medium ${
+													selectedAgent.type === 'Sales'
+														? 'bg-blue-100 text-blue-800'
+														: selectedAgent.type === 'Support'
+														? 'bg-purple-100 text-purple-800'
+														: 'bg-orange-100 text-orange-800'
+												}`}
+											>
+												{selectedAgent.type}
+											</span>
+										</div>
+										<div>
+											<label className='block text-sm font-medium text-gray-700 mb-2'>
+												Status
+											</label>
+											<span
+												className={`inline-block px-3 py-2 rounded-full text-sm font-medium ${
+													selectedAgent.status === 'Active'
+														? 'bg-green-100 text-green-800'
+														: 'bg-gray-100 text-gray-800'
+												}`}
+											>
+												{selectedAgent.status}
+											</span>
+										</div>
+									</div>
+
 									{/* Agent ID */}
 									<div>
 										<label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -882,6 +1002,28 @@ export default function Home() {
 										<h3 className='text-lg font-medium text-gray-900 mb-2'>
 											Delete Agent &ldquo;{agentToDelete.name}&rdquo;
 										</h3>
+										<div className='flex gap-2 mb-3'>
+											<span
+												className={`text-xs px-2 py-1 rounded ${
+													agentToDelete.type === 'Sales'
+														? 'bg-blue-100 text-blue-800'
+														: agentToDelete.type === 'Support'
+														? 'bg-purple-100 text-purple-800'
+														: 'bg-orange-100 text-orange-800'
+												}`}
+											>
+												{agentToDelete.type}
+											</span>
+											<span
+												className={`text-xs px-2 py-1 rounded ${
+													agentToDelete.status === 'Active'
+														? 'bg-green-100 text-green-800'
+														: 'bg-gray-100 text-gray-800'
+												}`}
+											>
+												{agentToDelete.status}
+											</span>
+										</div>
 										<p className='text-sm text-gray-600 mb-4'>
 											Are you sure you want to delete this agent? This action
 											cannot be undone.

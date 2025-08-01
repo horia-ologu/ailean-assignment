@@ -39,14 +39,31 @@ export class AgentController {
 	// POST /agents - Create a new agent
 	createAgent = (req: Request, res: Response): void => {
 		try {
-			const { name, description }: CreateAgentRequest = req.body
+			const { name, type, status, description }: CreateAgentRequest = req.body
 
 			if (!name || name.trim() === '') {
 				res.status(400).json({ error: 'Name is required' })
 				return
 			}
 
-			const newAgent = agentService.createAgent(name.trim(), description)
+			if (!type || !['Sales', 'Support', 'Marketing'].includes(type)) {
+				res
+					.status(400)
+					.json({ error: 'Type must be Sales, Support, or Marketing' })
+				return
+			}
+
+			if (!status || !['Active', 'Inactive'].includes(status)) {
+				res.status(400).json({ error: 'Status must be Active or Inactive' })
+				return
+			}
+
+			const newAgent = agentService.createAgent(
+				name.trim(),
+				type,
+				status,
+				description
+			)
 			res.status(201).json(newAgent)
 		} catch (error) {
 			console.error('Error creating agent:', error)
@@ -58,9 +75,28 @@ export class AgentController {
 	updateAgent = (req: Request, res: Response): void => {
 		try {
 			const { id } = req.params
-			const { name, description }: Partial<CreateAgentRequest> = req.body
+			const { name, type, status, description }: Partial<CreateAgentRequest> =
+				req.body
 
-			const updatedAgent = agentService.updateAgent(id, name, description)
+			if (type && !['Sales', 'Support', 'Marketing'].includes(type)) {
+				res
+					.status(400)
+					.json({ error: 'Type must be Sales, Support, or Marketing' })
+				return
+			}
+
+			if (status && !['Active', 'Inactive'].includes(status)) {
+				res.status(400).json({ error: 'Status must be Active or Inactive' })
+				return
+			}
+
+			const updatedAgent = agentService.updateAgent(
+				id,
+				name,
+				type,
+				status,
+				description
+			)
 
 			if (!updatedAgent) {
 				res.status(404).json({ error: 'Agent not found' })
@@ -110,17 +146,25 @@ export class AgentController {
 				return
 			}
 
-			// Restrict /ask endpoint to Hotel Q&A Bot only
-			if (!agentService.isHotelQABot(agent)) {
+			// Check if agent is active
+			if (agent.status === 'Inactive') {
 				res.status(403).json({
-					error: 'Questions can only be asked to the Hotel Q&A Bot',
-					availableBot: 'Hotel Q&A Bot',
+					error: `Agent "${agent.name}" is currently inactive and cannot answer questions`,
+					agentType: agent.type,
+					status: agent.status,
 				})
 				return
 			}
 
-			// Process the question with keyword matching
-			const answer = agentService.processHotelQuestion(question.trim())
+			// Process the question based on agent type
+			let answer: string
+			if (agentService.isHotelQABot(agent)) {
+				// Use the existing hotel Q&A logic
+				answer = agentService.processHotelQuestion(question.trim())
+			} else {
+				// Generate appropriate response for other agent types
+				answer = agentService.processGeneralQuestion(agent, question.trim())
+			}
 
 			const response: AskQuestionResponse = {
 				agentId: id,

@@ -1,217 +1,41 @@
 {
-  "agents": [
-    {
-      "id": "1",
-      "name": "The Grand Arosa Q&A Bot",
-      "description": "A helpful bot that answers questions about The Grand Arosa hotel services, amenities, and policies.",
-      "createdAt": "2025-07-31T21:00:00.000Z",
-      "type": "qa-bot",
-      "capabilities": [
-        "check-in",
-        "check-out",
-        "parking",
-        "breakfast",
-        "wifi",
-        "room-service",
-        "amenities",
-        "cancellation",
-        "spa",
-        "location"
-      ],
-      "qaData": {
-        "keywords": {
-          "check-in": [
-            "check-in",
-            "checkin",
-            "check in",
-            "arrival",
-            "arriving",
-            "when can i check in",
-            "check in time",
-            "checkin time"
-          ],
-          "check-out": [
-            "check-out",
-            "checkout",
-            "check out",
-            "departure",
-            "leaving",
-            "when do i check out",
-            "check out time",
-            "checkout time"
-          ],
-          "parking": [
-            "parking",
-            "park",
-            "car",
-            "vehicle",
-            "garage",
-            "valet",
-            "parking lot",
-            "parking space"
-          ],
-          "breakfast": [
-            "breakfast",
-            "morning meal",
-            "continental breakfast",
-            "buffet",
-            "dining",
-            "restaurant",
-            "food"
-          ],
-          "wifi": [
-            "wifi",
-            "wi-fi",
-            "internet",
-            "wireless",
-            "connection",
-            "password"
-          ],
-          "room-service": [
-            "room service",
-            "room-service",
-            "delivery",
-            "order food",
-            "in-room dining"
-          ],
-          "amenities": [
-            "amenities",
-            "facilities",
-            "services",
-            "pool",
-            "gym",
-            "spa",
-            "fitness",
-            "laundry"
-          ],
-          "cancellation": [
-            "cancel",
-            "cancellation",
-            "refund",
-            "policy",
-            "booking",
-            "reservation"
-          ],
-          "spa": [
-            "spa",
-            "wellness",
-            "massage",
-            "treatment",
-            "relaxation",
-            "beauty",
-            "sauna",
-            "thermal"
-          ],
-          "location": [
-            "location",
-            "where",
-            "address",
-            "directions",
-            "transportation",
-            "airport",
-            "train",
-            "ski slopes"
-          ]
-        },
-        "answers": {
-          "check-in": "Check-in at The Grand Arosa is from 3:00 PM. Early check-in is available upon request and subject to room availability. Our concierge team will be happy to store your luggage if you arrive early.",
-          "check-out": "Check-out time is 12:00 PM. Late check-out until 6:00 PM can be arranged for CHF 50, subject to availability. Express check-out service is available through our mobile app.",
-          "parking": "The Grand Arosa offers complimentary parking for all guests in our secure underground garage. Valet parking service is available upon request for CHF 25 per night.",
-          "breakfast": "Our gourmet breakfast buffet is served from 7:00 AM to 11:00 AM in the Grand Restaurant, featuring local Alpine specialties, fresh pastries, and international favorites with stunning mountain views.",
-          "wifi": "Complimentary high-speed WiFi is available throughout The Grand Arosa. Connect to 'GrandArosa_Guest' network - no password required. Premium business WiFi is available in our executive floors.",
-          "room-service": "24-hour room service is available featuring our signature Alpine cuisine. Orders can be placed via phone extension 24 or through our Grand Arosa mobile app. Delivery typically takes 25-35 minutes.",
-          "amenities": "The Grand Arosa features a world-class spa, heated outdoor pool, fitness center, ski concierge, multiple dining venues, business center, and concierge services. All amenities offer spectacular Alpine views.",
-          "cancellation": "Free cancellation up to 48 hours before arrival. Cancellations within 48 hours incur a one-night charge. Non-refundable rates have different terms - please check your booking confirmation.",
-          "spa": "Our Alpine Wellness Spa offers luxury treatments inspired by Swiss traditions. Features include thermal pools, saunas, steam rooms, and signature Alpine stone massages. Open daily 6:00 AM - 10:00 PM.",
-          "location": "The Grand Arosa is located in the heart of Arosa, Switzerland, at 1,800m altitude. We're 5 minutes walk from Arosa train station and ski lifts. Zurich Airport is 2.5 hours by train or car."
-        },
-        "fallbackResponse": "Thank you for your question about \"{question}\". I'm The Grand Arosa Q&A Bot and I can help you with information about check-in/check-out times, parking, breakfast, WiFi, room service, amenities, spa services, location, and cancellation policies. Please feel free to ask about any of these topics!"
-      }
-    },
-    {
-      "id": "3",
-      "name": "Hotel Q&A Bot",
-      "description": "A helpful bot that answers questions about hotel services, amenities, and policies.",
-      "createdAt": "2025-08-01T05:42:51.645Z"
-    }
-  ],
-  "metadata": {
-    "version": "1.0.0",
-    "lastUpdated": "2025-08-01T06:13:07.853Z",
-    "nextId": 4,
-    "description": "Agent database with Q&A capabilities for the Hotel Management System",
-    "agentTypes": [
-      {
-        "type": "qa-bot",
-        "name": "Q&A Bot",
-        "description": "Intelligent bot that can answer specific questions based on keyword matching",
-        "features": [
-          "keyword-matching",
-          "fallback-responses",
-          "category-based-answers"
-        ]
-      },
-      {
-        "type": "custom-agent",
-        "name": "Custom Agent",
-        "description": "User-created agent with custom functionality",
-        "features": [
-          "user-defined",
-          "flexible-purpose"
-        ]
-      }
-    ],
-    "capabilities": {
-      "check-in": {
-        "category": "Hotel Operations",
-        "description": "Information about check-in procedures and times",
-        "icon": "⏰"
-      },
-      "check-out": {
-        "category": "Hotel Operations",
-        "description": "Information about check-out procedures and times",
-        "icon": "🚪"
-      },
-      "parking": {
-        "category": "Hotel Services",
-        "description": "Parking availability, pricing, and options",
-        "icon": "🚗"
-      },
-      "breakfast": {
-        "category": "Food & Dining",
-        "description": "Breakfast service information and hours",
-        "icon": "🍽️"
-      },
-      "wifi": {
-        "category": "Technology",
-        "description": "Internet connectivity and WiFi access information",
-        "icon": "📶"
-      },
-      "room-service": {
-        "category": "Food & Dining",
-        "description": "In-room dining options and ordering procedures",
-        "icon": "🛎️"
-      },
-      "amenities": {
-        "category": "Hotel Services",
-        "description": "Available facilities and guest services",
-        "icon": "🏊"
-      },
-      "cancellation": {
-        "category": "Policies",
-        "description": "Booking cancellation policies and procedures",
-        "icon": "📋"
-      },
-      "spa": {
-        "category": "Wellness",
-        "description": "Spa treatments, wellness facilities, and relaxation services",
-        "icon": "🧘"
-      },
-      "location": {
-        "category": "Information",
-        "description": "Hotel location, directions, and transportation options",
-        "icon": "📍"
-      }
-    }
-  }
+	"agents": [
+		{
+			"id": "1",
+			"name": "The Grand Arosa Q&A Bot",
+			"type": "Support",
+			"status": "Active",
+			"description": "A helpful bot that answers questions about The Grand Arosa hotel services, amenities, and policies.",
+			"createdAt": "2025-07-31T21:00:00.000Z"
+		},
+		{
+			"id": "2",
+			"name": "Sales Assistant",
+			"type": "Sales",
+			"status": "Active",
+			"description": "Helps with product inquiries and sales support.",
+			"createdAt": "2025-08-01T10:00:00.000Z"
+		},
+		{
+			"id": "3",
+			"name": "Marketing Bot",
+			"type": "Marketing",
+			"status": "Inactive",
+			"description": "Provides marketing insights and campaign support.",
+			"createdAt": "2025-08-01T11:00:00.000Z"
+		},
+		{
+			"id": "4",
+			"name": "Hotel Q&A Bot",
+			"type": "Support",
+			"status": "Active",
+			"description": "A helpful bot that answers questions about hotel services, amenities, and policies.",
+			"createdAt": "2025-08-01T06:26:00.097Z"
+		}
+	],
+	"metadata": {
+		"nextId": 5,
+		"lastUpdated": "2025-08-01T06:26:00.097Z",
+		"version": "1.0.0"
+	}
 }
