@@ -130,9 +130,11 @@ const initializeApp = async () => {
 		console.log(`✅ Hotel Q&A Bot initialized with ID: ${hotelBot.id}`)
 
 		app.listen(PORT, () => {
+			const serverUrl = process.env.SERVER_URL || `http://localhost:${PORT}`
+
 			console.log(`🚀 Server is running on port ${PORT}`)
-			console.log(`📡 Health check: http://localhost:${PORT}/api/health`)
-			console.log(`🤖 Agents API: http://localhost:${PORT}/api/agents`)
+			console.log(`📡 Health check: ${serverUrl}/api/health`)
+			console.log(`🤖 Agents API: ${serverUrl}/api/agents`)
 			console.log(`🏨 Hotel Q&A Bot ready for questions!`)
 			console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`)
 		})
