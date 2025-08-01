@@ -1,9 +1,54 @@
 import { Agent } from '../models/Agent'
+import * as fs from 'fs'
+import * as path from 'path'
+
+interface AgentDB {
+	agents: Agent[]
+	metadata: {
+		nextId: number
+		lastUpdated: string
+		[key: string]: any
+	}
+}
 
 class AgentService {
-	private agents: Agent[] = []
-	private nextId = 1
+	private dbPath = path.join(__dirname, '../../lib/agents-db.json')
+	private db: AgentDB
 	private readonly HOTEL_QA_BOT_NAME = 'Hotel Q&A Bot'
+
+	constructor() {
+		this.db = this.loadDatabase()
+	}
+
+	private loadDatabase(): AgentDB {
+		try {
+			if (fs.existsSync(this.dbPath)) {
+				const data = fs.readFileSync(this.dbPath, 'utf8')
+				return JSON.parse(data)
+			}
+		} catch (error) {
+			console.error('Error loading database:', error)
+		}
+
+		// Return default database structure if file doesn't exist or error occurs
+		return {
+			agents: [],
+			metadata: {
+				nextId: 1,
+				lastUpdated: new Date().toISOString(),
+				version: '1.0.0',
+			},
+		}
+	}
+
+	private saveDatabase(): void {
+		try {
+			this.db.metadata.lastUpdated = new Date().toISOString()
+			fs.writeFileSync(this.dbPath, JSON.stringify(this.db, null, 2))
+		} catch (error) {
+			console.error('Error saving database:', error)
+		}
+	}
 
 	// Hotel Q&A keyword matching logic
 	private readonly hotelQAResponses = {
@@ -93,49 +138,57 @@ class AgentService {
 	}
 
 	getAllAgents(): Agent[] {
-		return this.agents
+		return this.db.agents
 	}
 
 	getAgentById(id: string): Agent | undefined {
-		return this.agents.find((agent) => agent.id === id)
+		return this.db.agents.find((agent: Agent) => agent.id === id)
 	}
 
 	createAgent(name: string, description?: string): Agent {
 		const newAgent: Agent = {
-			id: this.nextId.toString(),
+			id: this.db.metadata.nextId.toString(),
 			name,
 			description,
 			createdAt: new Date(),
 		}
 
-		this.agents.push(newAgent)
-		this.nextId++
+		this.db.agents.push(newAgent)
+		this.db.metadata.nextId++
+		this.saveDatabase()
 
 		return newAgent
 	}
 
 	updateAgent(id: string, name?: string, description?: string): Agent | null {
-		const agentIndex = this.agents.findIndex((agent) => agent.id === id)
+		const agentIndex = this.db.agents.findIndex(
+			(agent: Agent) => agent.id === id
+		)
 
 		if (agentIndex === -1) {
 			return null
 		}
 
-		if (name) this.agents[agentIndex].name = name
+		if (name) this.db.agents[agentIndex].name = name
 		if (description !== undefined)
-			this.agents[agentIndex].description = description
+			this.db.agents[agentIndex].description = description
 
-		return this.agents[agentIndex]
+		this.saveDatabase()
+		return this.db.agents[agentIndex]
 	}
 
 	deleteAgent(id: string): Agent | null {
-		const agentIndex = this.agents.findIndex((agent) => agent.id === id)
+		const agentIndex = this.db.agents.findIndex(
+			(agent: Agent) => agent.id === id
+		)
 
 		if (agentIndex === -1) {
 			return null
 		}
 
-		return this.agents.splice(agentIndex, 1)[0]
+		const deletedAgent = this.db.agents.splice(agentIndex, 1)[0]
+		this.saveDatabase()
+		return deletedAgent
 	}
 
 	isHotelQABot(agent: Agent): boolean {
@@ -160,8 +213,8 @@ class AgentService {
 
 	// Initialize with Hotel Q&A Bot if it doesn't exist
 	initializeHotelBot(): Agent {
-		const existingBot = this.agents.find(
-			(agent) => agent.name === this.HOTEL_QA_BOT_NAME
+		const existingBot = this.db.agents.find(
+			(agent: Agent) => agent.name === this.HOTEL_QA_BOT_NAME
 		)
 
 		if (!existingBot) {

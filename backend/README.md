@@ -1,6 +1,153 @@
-# Agent Management API
+# The Grand Arosa Hotel Q&A API
 
-A production-ready Express server in TypeScript for manag## 🔧 Running the Server
+A production-ready Express.js server in TypeScript that powers **The Grand Arosa Hotel Q&A System**. Features intelligent chatbot capabilities, agent management, and Swiss Alpine hotel-specific information.
+
+## 🏨 Hotel Q&A Bot Features
+
+### **The Grand Arosa Q&A Bot**
+
+- **Intelligent Keyword Matching**: Natural language processing for guest inquiries
+- **10 Comprehensive Categories**: Check-in/out, parking, breakfast, WiFi, room service, amenities, spa, location, cancellation
+- **Swiss-Specific Information**: CHF pricing, Alpine specialties, 1,800m altitude location
+- **Fallback Responses**: Helpful guidance for unmatched questions
+
+### **Sample Q&A Categories**
+
+```typescript
+✅ Check-in/Check-out: Times, early/late options, policies
+✅ Parking: Underground garage, valet services, pricing
+✅ Breakfast: Alpine buffet, hours, mountain views
+✅ WiFi: Complimentary access, network details
+✅ Room Service: 24/7 availability, mobile app ordering
+✅ Amenities: Spa, pool, fitness, ski concierge
+✅ Spa Services: Alpine wellness, thermal pools, treatments
+✅ Location: Arosa Switzerland, train station, airport access
+✅ Cancellation: 48-hour policy, refund terms
+```
+
+## 🛠 Technical Architecture
+
+### **Core Components**
+
+- **AgentService**: Business logic for agent CRUD operations
+- **Hotel Q&A Engine**: Keyword matching and response generation
+- **JSON Database**: File-based persistence (development) / In-memory (production)
+- **CORS Middleware**: Cross-origin request handling
+- **TypeScript**: Full type safety and modern JavaScript features
+
+### **API Endpoints**
+
+| Method   | Endpoint           | Description              |
+| -------- | ------------------ | ------------------------ |
+| `GET`    | `/agents`          | Retrieve all agents      |
+| `GET`    | `/agents/:id`      | Get specific agent by ID |
+| `POST`   | `/agents`          | Create new agent         |
+| `PUT`    | `/agents/:id`      | Update existing agent    |
+| `DELETE` | `/agents/:id`      | Delete agent             |
+| `POST`   | `/agents/:id/chat` | Send message to agent    |
+
+### **Request/Response Examples**
+
+**Create Agent:**
+
+```bash
+POST /agents
+Content-Type: application/json
+
+{
+  "name": "Custom Agent",
+  "description": "A helpful custom assistant"
+}
+```
+
+**Chat with The Grand Arosa Bot:**
+
+```bash
+POST /agents/1/chat
+Content-Type: application/json
+
+{
+  "message": "What time is check-in?"
+}
+
+# Response:
+{
+  "response": "Check-in at The Grand Arosa is from 3:00 PM. Early check-in is available upon request and subject to room availability. Our concierge team will be happy to store your luggage if you arrive early."
+}
+```
+
+## 🗃 Database Structure
+
+### **JSON Database Schema**
+
+```json
+{
+  "agents": [
+    {
+      "id": "1",
+      "name": "The Grand Arosa Q&A Bot",
+      "description": "Helpful bot for hotel services",
+      "type": "qa-bot",
+      "capabilities": ["check-in", "spa", "location", ...],
+      "qaData": {
+        "keywords": { ... },
+        "answers": { ... },
+        "fallbackResponse": "..."
+      }
+    }
+  ],
+  "metadata": {
+    "nextId": 2,
+    "lastUpdated": "2025-08-01T05:42:51.645Z",
+    "version": "1.0.0"
+  }
+}
+```
+
+### **Agent Model**
+
+```typescript
+interface Agent {
+	id: string
+	name: string
+	description?: string
+	createdAt: Date
+	type?: string
+	capabilities?: string[]
+	qaData?: {
+		keywords: Record<string, string[]>
+		answers: Record<string, string>
+		fallbackResponse: string
+	}
+}
+```
+
+## 🧠 Q&A Engine Logic
+
+### **Keyword Matching Algorithm**
+
+1. **Input Processing**: Convert user question to lowercase
+2. **Category Scanning**: Check each Q&A category for keyword matches
+3. **First Match Wins**: Return answer from first matching category
+4. **Fallback Response**: Provide helpful guidance if no matches found
+
+### **Example Keyword Matching**
+
+```typescript
+Question: "Do you have parking?"
+Keywords: ["parking", "park", "car", "vehicle", "garage"]
+Match: "parking" found → Return parking information
+
+Question: "Where can I get a massage?"
+Keywords: ["spa", "wellness", "massage", "treatment"]
+Match: "massage" found → Return spa information
+```
+
+### **Extensible Design**
+
+- **Easy Category Addition**: Add new Q&A categories via JSON
+- **Keyword Expansion**: Extend keyword lists for better matching
+- **Multi-language Support**: Framework ready for internationalization## 🔧 Running the Server
 
 ### Development
 

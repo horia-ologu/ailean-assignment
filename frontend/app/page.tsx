@@ -1,20 +1,30 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { apiService, Agent } from '../services/api'
 
 export default function Home() {
 	const [agents, setAgents] = useState<Agent[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
+	const chatEndRef = useRef<HTMLDivElement>(null)
+
+	// Utility function to check if an agent is a hotel bot
+	const isHotelBot = (agent: Agent) => {
+		return (
+			agent.name === 'Hotel Q&A Bot' || agent.name === 'The Grand Arosa Q&A Bot'
+		)
+	}
 
 	// Form state for creating new agents
 	const [newAgentName, setNewAgentName] = useState('')
 	const [newAgentDescription, setNewAgentDescription] = useState('')
 	const [creating, setCreating] = useState(false)
 
-	// Hardcoded Hotel Q&A Bot
-	const [hotelBotId, setHotelBotId] = useState<string | null>(null)
+	// Chat state with agent selection
+	const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
+	const [selectedAgentForChat, setSelectedAgentForChat] =
+		useState<Agent | null>(null)
 	const [question, setQuestion] = useState('')
 	const [chatHistory, setChatHistory] = useState<
 		Array<{
@@ -30,16 +40,22 @@ export default function Home() {
 	const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
 	const [showModal, setShowModal] = useState(false)
 
+	// Delete confirmation modal state
+	const [showDeleteModal, setShowDeleteModal] = useState(false)
+	const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null)
+
 	// Create the hardcoded Hotel Q&A Bot
 	const createHotelBot = useCallback(async () => {
 		try {
 			const hotelBot = await apiService.createAgent({
-				name: 'Hotel Q&A Bot',
+				name: 'The Grand Arosa Q&A Bot',
 				description:
-					'A helpful bot that answers questions about hotel services, amenities, and policies.',
+					'A helpful bot that answers questions about The Grand Arosa hotel services, amenities, and policies.',
 			})
-			setHotelBotId(hotelBot.id)
 			setAgents((prev) => [...prev, hotelBot])
+			// Auto-select the hotel bot as the default agent for chat
+			setSelectedAgentId(hotelBot.id)
+			setSelectedAgentForChat(hotelBot)
 		} catch (err) {
 			console.error('Error creating Hotel Q&A Bot:', err)
 		}
@@ -52,12 +68,11 @@ export default function Home() {
 			const agentsData = await apiService.getAgents()
 			setAgents(agentsData)
 
-			// Check if Hotel Q&A Bot exists, if not create it
-			const hotelBot = agentsData.find(
-				(agent) => agent.name === 'Hotel Q&A Bot'
-			)
+			// Check if The Grand Arosa Q&A Bot exists, if not create it
+			const hotelBot = agentsData.find((agent) => isHotelBot(agent))
 			if (hotelBot) {
-				setHotelBotId(hotelBot.id)
+				setSelectedAgentId(hotelBot.id)
+				setSelectedAgentForChat(hotelBot)
 			} else {
 				await createHotelBot()
 			}
@@ -75,6 +90,22 @@ export default function Home() {
 	useEffect(() => {
 		loadAgents()
 	}, [loadAgents])
+
+	// Auto-scroll to bottom when chat history changes
+	useEffect(() => {
+		if (chatEndRef.current) {
+			chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
+		}
+	}, [chatHistory, askingQuestion])
+
+	// Handle agent selection for chat
+	const handleAgentSelection = (agentId: string) => {
+		const agent = agents.find((a) => a.id === agentId)
+		setSelectedAgentId(agentId)
+		setSelectedAgentForChat(agent || null)
+		// Clear chat history when switching agents
+		setChatHistory([])
+	}
 
 	// Create a new agent
 	const handleCreateAgent = async (e: React.FormEvent) => {
@@ -98,10 +129,10 @@ export default function Home() {
 		}
 	}
 
-	// Ask a question to the Hotel Q&A Bot
+	// Ask a question to the selected agent
 	const handleAskQuestion = async (e: React.FormEvent) => {
 		e.preventDefault()
-		if (!question.trim() || !hotelBotId) return
+		if (!question.trim() || !selectedAgentId) return
 
 		const userMessage = {
 			id: Date.now().toString(),
@@ -117,7 +148,10 @@ export default function Home() {
 
 		try {
 			setAskingQuestion(true)
-			const response = await apiService.askQuestion(hotelBotId, currentQuestion)
+			const response = await apiService.askQuestion(
+				selectedAgentId,
+				currentQuestion
+			)
 
 			// Add bot response to chat
 			const botMessage = {
@@ -145,23 +179,67 @@ export default function Home() {
 	}
 
 	// Delete an agent
-	const handleDeleteAgent = async (id: string) => {
-		if (!confirm('Are you sure you want to delete this agent?')) return
+	const handleDeleteAgent = useCallback(
+		async (id: string) => {
+			try {
+				await apiService.deleteAgent(id)
+				setAgents((prev) => prev.filter((agent) => agent.id !== id))
 
-		try {
-			await apiService.deleteAgent(id)
-			setAgents((prev) => prev.filter((agent) => agent.id !== id))
-
-			// Reset hotel bot if it was deleted
-			if (id === hotelBotId) {
-				setHotelBotId(null)
-				setChatHistory([])
+				// If the deleted agent was selected for chat, clear selection
+				if (id === selectedAgentId) {
+					setSelectedAgentId(null)
+					setSelectedAgentForChat(null)
+					setChatHistory([])
+				}
+			} catch (err) {
+				setError('Failed to delete agent')
+				console.error('Error deleting agent:', err)
+			} finally {
+				// Close delete modal
+				setShowDeleteModal(false)
+				setAgentToDelete(null)
 			}
-		} catch (err) {
-			setError('Failed to delete agent')
-			console.error('Error deleting agent:', err)
-		}
+		},
+		[selectedAgentId]
+	)
+
+	// Open delete confirmation modal
+	const openDeleteModal = (agent: Agent) => {
+		setAgentToDelete(agent)
+		setShowDeleteModal(true)
 	}
+
+	// Close delete confirmation modal
+	const closeDeleteModal = () => {
+		setShowDeleteModal(false)
+		setAgentToDelete(null)
+	}
+
+	// Confirm delete action
+	const confirmDelete = useCallback(() => {
+		if (agentToDelete) {
+			handleDeleteAgent(agentToDelete.id)
+		}
+	}, [agentToDelete, handleDeleteAgent])
+
+	// Handle keyboard events for delete modal
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (showDeleteModal) {
+				if (event.key === 'Escape') {
+					setShowDeleteModal(false)
+					setAgentToDelete(null)
+				} else if (event.key === 'Enter') {
+					if (agentToDelete) {
+						confirmDelete()
+					}
+				}
+			}
+		}
+
+		document.addEventListener('keydown', handleKeyDown)
+		return () => document.removeEventListener('keydown', handleKeyDown)
+	}, [showDeleteModal, agentToDelete, confirmDelete])
 
 	// Open agent details modal
 	const openAgentModal = (agent: Agent) => {
@@ -264,9 +342,9 @@ export default function Home() {
 												<div className='flex-1'>
 													<h4 className='font-medium text-gray-900'>
 														{agent.name}
-														{agent.name === 'Hotel Q&A Bot' && (
+														{isHotelBot(agent) && (
 															<span className='ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded'>
-																Hardcoded Bot
+																Hotel Bot
 															</span>
 														)}
 													</h4>
@@ -280,15 +358,22 @@ export default function Home() {
 														{new Date(agent.createdAt).toLocaleDateString()}
 													</p>
 												</div>
-												<button
-													onClick={(e) => {
-														e.stopPropagation()
-														handleDeleteAgent(agent.id)
-													}}
-													className='text-red-500 hover:text-red-700 text-sm'
-												>
-													Delete
-												</button>
+												{!isHotelBot(agent) && (
+													<button
+														onClick={(e) => {
+															e.stopPropagation()
+															openDeleteModal(agent)
+														}}
+														className='text-red-500 hover:text-red-700 text-sm'
+													>
+														Delete
+													</button>
+												)}
+												{isHotelBot(agent) && (
+													<span className='text-xs text-green-600 bg-green-50 px-2 py-1 rounded'>
+														Protected
+													</span>
+												)}
 											</div>
 										</div>
 									))}
@@ -297,22 +382,67 @@ export default function Home() {
 						</div>
 					</div>
 
-					{/* Hotel Q&A Bot Section */}
+					{/* Agent Chat Section */}
 					<div className='bg-white rounded-lg shadow-md p-6'>
 						<h2 className='text-2xl font-semibold text-gray-800 mb-6'>
-							Hotel Q&A Bot
+							Agent Chat
 						</h2>
 
-						{hotelBotId ? (
+						{/* Agent Selection */}
+						<div className='mb-6'>
+							<label
+								htmlFor='agent-select'
+								className='block text-sm font-medium text-gray-700 mb-2'
+							>
+								Select Agent:
+							</label>
+							<select
+								id='agent-select'
+								value={selectedAgentId || ''}
+								onChange={(e) => handleAgentSelection(e.target.value)}
+								className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500'
+							>
+								<option value=''>Choose an agent...</option>
+								{agents.map((agent) => (
+									<option key={agent.id} value={agent.id}>
+										{agent.name}
+									</option>
+								))}
+							</select>
+						</div>
+
+						{selectedAgentForChat ? (
 							<div>
+								{/* Selected Agent Info */}
+								<div className='bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4'>
+									<div className='flex items-center'>
+										<div className='text-2xl mr-3'>
+											{isHotelBot(selectedAgentForChat) ? '🏨' : '🤖'}
+										</div>
+										<div>
+											<h3 className='font-semibold text-blue-900'>
+												{selectedAgentForChat.name}
+											</h3>
+											<p className='text-sm text-blue-700'>
+												{selectedAgentForChat.description ||
+													'No description available'}
+											</p>
+										</div>
+									</div>
+								</div>
+
 								{/* Chat History */}
 								<div className='bg-gray-50 border rounded-lg p-4 mb-4 h-96 overflow-y-auto'>
 									{chatHistory.length === 0 ? (
 										<div className='text-center text-gray-500 mt-8'>
-											<div className='text-4xl mb-2'>🏨</div>
-											<p>Welcome to Hotel Q&A Bot!</p>
+											<div className='text-4xl mb-2'>
+												{isHotelBot(selectedAgentForChat) ? '🏨' : '💬'}
+											</div>
+											<p>Welcome to {selectedAgentForChat.name}!</p>
 											<p className='text-sm'>
-												Ask me anything about our hotel services.
+												{isHotelBot(selectedAgentForChat)
+													? 'Ask me anything about our hotel services.'
+													: 'Start a conversation with this agent.'}
 											</p>
 										</div>
 									) : (
@@ -363,6 +493,7 @@ export default function Home() {
 													</div>
 												</div>
 											)}
+											<div ref={chatEndRef} />
 										</div>
 									)}
 								</div>
@@ -409,47 +540,85 @@ export default function Home() {
 								<div className='text-sm text-gray-600'>
 									<h4 className='font-medium mb-2'>💬 Try asking about:</h4>
 									<div className='grid grid-cols-2 gap-2'>
-										<button
-											onClick={() =>
-												setQuestion('What are your check-in times?')
-											}
-											className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-										>
-											⏰ Check-in times
-										</button>
-										<button
-											onClick={() => setQuestion('Do you have room service?')}
-											className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-										>
-											🍽️ Room service
-										</button>
-										<button
-											onClick={() => setQuestion('Is there free WiFi?')}
-											className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-										>
-											📶 WiFi information
-										</button>
-										<button
-											onClick={() => setQuestion('What amenities do you have?')}
-											className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-										>
-											🏊 Hotel amenities
-										</button>
+										{isHotelBot(selectedAgentForChat) ? (
+											<>
+												<button
+													onClick={() =>
+														setQuestion('What are your check-in times?')
+													}
+													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+												>
+													⏰ Check-in times
+												</button>
+												<button
+													onClick={() =>
+														setQuestion('Do you have room service?')
+													}
+													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+												>
+													🍽️ Room service
+												</button>
+												<button
+													onClick={() => setQuestion('Is there free WiFi?')}
+													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+												>
+													📶 WiFi information
+												</button>
+												<button
+													onClick={() =>
+														setQuestion('What amenities do you have?')
+													}
+													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+												>
+													🏊 Hotel amenities
+												</button>
+											</>
+										) : (
+											<>
+												<button
+													onClick={() => setQuestion('Hello!')}
+													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+												>
+													👋 Say hello
+												</button>
+												<button
+													onClick={() => setQuestion('How can you help me?')}
+													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+												>
+													❓ Get help
+												</button>
+												<button
+													onClick={() => setQuestion('What can you do?')}
+													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+												>
+													🔧 Learn capabilities
+												</button>
+												<button
+													onClick={() => setQuestion('Tell me about yourself')}
+													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
+												>
+													ℹ️ About agent
+												</button>
+											</>
+										)}
 									</div>
 								</div>
 							</div>
 						) : (
-							<div className='text-gray-500'>
-								<p>
-									Hotel Q&A Bot is not available. It will be created
-									automatically when the page loads.
+							<div className='text-center text-gray-500 py-8'>
+								<div className='text-4xl mb-4'>🤖</div>
+								<p className='text-lg font-medium mb-2'>No agent selected</p>
+								<p className='text-sm'>
+									Please select an agent from the dropdown above to start
+									chatting.
 								</p>
-								<button
-									onClick={createHotelBot}
-									className='mt-4 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600'
-								>
-									Create Hotel Bot
-								</button>
+								{agents.length === 0 && (
+									<div className='mt-4'>
+										<p className='text-sm text-gray-400 mb-2'>
+											No agents available. Create one first!
+										</p>
+									</div>
+								)}
 							</div>
 						)}
 					</div>
@@ -502,9 +671,9 @@ export default function Home() {
 											<p className='text-lg font-semibold text-gray-900'>
 												{selectedAgent.name}
 											</p>
-											{selectedAgent.name === 'Hotel Q&A Bot' && (
+											{isHotelBot(selectedAgent) && (
 												<span className='ml-3 bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full'>
-													🏨 Hardcoded Bot
+													🏨 Hotel Bot
 												</span>
 											)}
 										</div>
@@ -572,7 +741,7 @@ export default function Home() {
 											Agent Type
 										</label>
 										<div className='flex items-center space-x-2'>
-											{selectedAgent.name === 'Hotel Q&A Bot' ? (
+											{isHotelBot(selectedAgent) ? (
 												<>
 													<span className='bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm'>
 														🤖 Q&A Bot
@@ -590,7 +759,7 @@ export default function Home() {
 									</div>
 
 									{/* Capabilities (for Hotel Q&A Bot) */}
-									{selectedAgent.name === 'Hotel Q&A Bot' && (
+									{isHotelBot(selectedAgent) && (
 										<div>
 											<label className='block text-sm font-medium text-gray-700 mb-2'>
 												Bot Capabilities
@@ -660,14 +829,88 @@ export default function Home() {
 								</button>
 								<button
 									onClick={() => {
-										if (
-											confirm('Are you sure you want to delete this agent?')
-										) {
-											handleDeleteAgent(selectedAgent.id)
-											closeAgentModal()
-										}
+										openDeleteModal(selectedAgent)
+										closeAgentModal()
 									}}
 									className='px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors'
+								>
+									Delete Agent
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Delete Confirmation Modal */}
+				{showDeleteModal && agentToDelete && (
+					<div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50'>
+						<div className='bg-white rounded-lg shadow-xl max-w-md w-full'>
+							{/* Modal Header */}
+							<div className='flex justify-between items-center p-6 border-b'>
+								<h2 className='text-xl font-semibold text-red-600'>
+									Confirm Deletion
+								</h2>
+								<button
+									onClick={closeDeleteModal}
+									className='text-gray-400 hover:text-gray-600 text-2xl'
+								>
+									×
+								</button>
+							</div>
+
+							{/* Modal Body */}
+							<div className='p-6'>
+								<div className='flex items-start space-x-4'>
+									<div className='flex-shrink-0'>
+										<div className='w-12 h-12 bg-red-100 rounded-full flex items-center justify-center'>
+											<svg
+												className='w-6 h-6 text-red-600'
+												fill='none'
+												stroke='currentColor'
+												viewBox='0 0 24 24'
+											>
+												<path
+													strokeLinecap='round'
+													strokeLinejoin='round'
+													strokeWidth={2}
+													d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z'
+												/>
+											</svg>
+										</div>
+									</div>
+									<div className='flex-1'>
+										<h3 className='text-lg font-medium text-gray-900 mb-2'>
+											Delete Agent &ldquo;{agentToDelete.name}&rdquo;
+										</h3>
+										<p className='text-sm text-gray-600 mb-4'>
+											Are you sure you want to delete this agent? This action
+											cannot be undone.
+										</p>
+										{agentToDelete.description && (
+											<div className='bg-gray-50 p-3 rounded border'>
+												<p className='text-xs text-gray-500 uppercase tracking-wide mb-1'>
+													Agent Description
+												</p>
+												<p className='text-sm text-gray-700'>
+													{agentToDelete.description}
+												</p>
+											</div>
+										)}
+									</div>
+								</div>
+							</div>
+
+							{/* Modal Footer */}
+							<div className='flex justify-end space-x-3 p-6 border-t bg-gray-50'>
+								<button
+									onClick={closeDeleteModal}
+									className='px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors'
+								>
+									Cancel
+								</button>
+								<button
+									onClick={confirmDelete}
+									className='px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 font-medium transition-colors'
 								>
 									Delete Agent
 								</button>
