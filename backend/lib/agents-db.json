@@ -1,41 +1,49 @@
 {
-	"agents": [
-		{
-			"id": "1",
-			"name": "The Grand Arosa Q&A Bot",
-			"type": "Support",
-			"status": "Active",
-			"description": "A helpful bot that answers questions about The Grand Arosa hotel services, amenities, and policies.",
-			"createdAt": "2025-07-31T21:00:00.000Z"
-		},
-		{
-			"id": "2",
-			"name": "Sales Assistant",
-			"type": "Sales",
-			"status": "Active",
-			"description": "Helps with product inquiries and sales support.",
-			"createdAt": "2025-08-01T10:00:00.000Z"
-		},
-		{
-			"id": "3",
-			"name": "Marketing Bot",
-			"type": "Marketing",
-			"status": "Inactive",
-			"description": "Provides marketing insights and campaign support.",
-			"createdAt": "2025-08-01T11:00:00.000Z"
-		},
-		{
-			"id": "4",
-			"name": "Hotel Q&A Bot",
-			"type": "Support",
-			"status": "Active",
-			"description": "A helpful bot that answers questions about hotel services, amenities, and policies.",
-			"createdAt": "2025-08-01T06:26:00.097Z"
-		}
-	],
-	"metadata": {
-		"nextId": 5,
-		"lastUpdated": "2025-08-01T06:26:00.097Z",
-		"version": "1.0.0"
-	}
+  "agents": [
+    {
+      "id": "1",
+      "name": "The Grand Arosa Q&A Bot",
+      "type": "Support",
+      "status": "Active",
+      "description": "A helpful bot that answers questions about The Grand Arosa hotel services, amenities, and policies.",
+      "createdAt": "2025-07-31T21:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "name": "Sales Assistant",
+      "type": "Sales",
+      "status": "Active",
+      "description": "Helps with product inquiries and sales support.",
+      "createdAt": "2025-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "3",
+      "name": "Marketing Bot",
+      "type": "Marketing",
+      "status": "Inactive",
+      "description": "Provides marketing insights and campaign support.",
+      "createdAt": "2025-08-01T11:00:00.000Z"
+    },
+    {
+      "id": "4",
+      "name": "Hotel Q&A Bot",
+      "type": "Support",
+      "status": "Active",
+      "description": "A helpful bot that answers questions about hotel services, amenities, and policies.",
+      "createdAt": "2025-08-01T06:26:00.097Z"
+    },
+    {
+      "id": "5",
+      "name": "Test Agent",
+      "type": "Sales",
+      "status": "Active",
+      "createdAt": "2025-08-04T18:50:40.856Z",
+      "description": "Test agent for date fix verification"
+    }
+  ],
+  "metadata": {
+    "nextId": 6,
+    "lastUpdated": "2025-08-04T18:50:40.856Z",
+    "version": "1.0.0"
+  }
 }

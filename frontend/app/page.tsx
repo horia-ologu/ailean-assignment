@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useForm } from 'react-hook-form'
 import { apiService, Agent, CreateAgentRequest } from '../services/api'
 
 export default function Home() {
@@ -17,14 +18,21 @@ export default function Home() {
 	}
 
 	// Form state for creating new agents
-	const [newAgentName, setNewAgentName] = useState('')
-	const [newAgentType, setNewAgentType] = useState<
-		'Sales' | 'Support' | 'Marketing'
-	>('Sales')
-	const [newAgentStatus, setNewAgentStatus] = useState<'Active' | 'Inactive'>(
-		'Active'
-	)
-	const [newAgentDescription, setNewAgentDescription] = useState('')
+	const {
+		register,
+		handleSubmit,
+		formState: { errors, isSubmitting },
+		reset,
+		watch,
+	} = useForm<CreateAgentRequest>({
+		defaultValues: {
+			name: '',
+			type: 'Sales',
+			status: 'Active',
+			description: '',
+		},
+	})
+
 	const [creating, setCreating] = useState(false)
 
 	// Chat state with agent selection
@@ -49,6 +57,9 @@ export default function Home() {
 	// Delete confirmation modal state
 	const [showDeleteModal, setShowDeleteModal] = useState(false)
 	const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null)
+
+	// Accordion state for create agent form
+	const [showCreateForm, setShowCreateForm] = useState(false)
 
 	// Create the hardcoded Hotel Q&A Bot
 	const createHotelBot = useCallback(async () => {
@@ -116,28 +127,23 @@ export default function Home() {
 	}
 
 	// Create a new agent
-	const handleCreateAgent = async (e: React.FormEvent) => {
-		e.preventDefault()
-		if (!newAgentName.trim()) return
-
+	const onSubmitCreateAgent = async (data: CreateAgentRequest) => {
 		try {
 			setCreating(true)
 			const createAgentData: CreateAgentRequest = {
-				name: newAgentName,
-				type: newAgentType,
-				status: newAgentStatus,
+				name: data.name,
+				type: data.type,
+				status: data.status,
 			}
 
-			if (newAgentDescription.trim()) {
-				createAgentData.description = newAgentDescription
+			if (data.description?.trim()) {
+				createAgentData.description = data.description
 			}
 
 			const newAgent = await apiService.createAgent(createAgentData)
 			setAgents((prev) => [...prev, newAgent])
-			setNewAgentName('')
-			setNewAgentType('Sales')
-			setNewAgentStatus('Active')
-			setNewAgentDescription('')
+			reset() // Reset form using React Hook Form
+			setShowCreateForm(false) // Close the accordion after successful creation
 		} catch (err) {
 			setError('Failed to create agent')
 			console.error('Error creating agent:', err)
@@ -315,164 +321,6 @@ export default function Home() {
 				)}
 
 				<div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-					{/* Agent Management Section */}
-					<div className='bg-white rounded-lg shadow-md p-6'>
-						<h2 className='text-2xl font-semibold text-gray-800 mb-6'>
-							Agent Management
-						</h2>
-
-						{/* Create Agent Form */}
-						<form onSubmit={handleCreateAgent} className='mb-6'>
-							<div className='mb-4'>
-								<label className='block text-sm font-medium text-gray-700 mb-2'>
-									Agent Name
-								</label>
-								<input
-									type='text'
-									value={newAgentName}
-									onChange={(e) => setNewAgentName(e.target.value)}
-									className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-									placeholder='Enter agent name'
-									required
-								/>
-							</div>
-							<div className='mb-4'>
-								<label className='block text-sm font-medium text-gray-700 mb-2'>
-									Agent Type
-								</label>
-								<select
-									value={newAgentType}
-									onChange={(e) =>
-										setNewAgentType(
-											e.target.value as 'Sales' | 'Support' | 'Marketing'
-										)
-									}
-									className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-									required
-								>
-									<option value='Sales'>Sales</option>
-									<option value='Support'>Support</option>
-									<option value='Marketing'>Marketing</option>
-								</select>
-							</div>
-							<div className='mb-4'>
-								<label className='block text-sm font-medium text-gray-700 mb-2'>
-									Agent Status
-								</label>
-								<select
-									value={newAgentStatus}
-									onChange={(e) =>
-										setNewAgentStatus(e.target.value as 'Active' | 'Inactive')
-									}
-									className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-									required
-								>
-									<option value='Active'>Active</option>
-									<option value='Inactive'>Inactive</option>
-								</select>
-							</div>
-							<div className='mb-4'>
-								<label className='block text-sm font-medium text-gray-700 mb-2'>
-									Description (optional)
-								</label>
-								<textarea
-									value={newAgentDescription}
-									onChange={(e) => setNewAgentDescription(e.target.value)}
-									className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-									placeholder='Enter agent description'
-									rows={3}
-								/>
-							</div>
-							<button
-								type='submit'
-								disabled={creating}
-								className='w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed'
-							>
-								{creating ? 'Creating...' : 'Create Agent'}
-							</button>
-						</form>
-
-						{/* Agents List */}
-						<div>
-							<h3 className='text-lg font-medium text-gray-800 mb-4'>
-								Current Agents
-							</h3>
-							{agents.length === 0 ? (
-								<p className='text-gray-500'>No agents found.</p>
-							) : (
-								<div className='space-y-3'>
-									{agents.map((agent) => (
-										<div
-											key={agent.id}
-											className='border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors'
-											onClick={() => openAgentModal(agent)}
-										>
-											<div className='flex justify-between items-start'>
-												<div className='flex-1'>
-													<h4 className='font-medium text-gray-900'>
-														{agent.name}
-														{isHotelBot(agent) && (
-															<span className='ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded'>
-																Hotel Bot
-															</span>
-														)}
-													</h4>
-													<div className='flex gap-2 mt-1'>
-														<span
-															className={`text-xs px-2 py-1 rounded ${
-																agent.type === 'Sales'
-																	? 'bg-blue-100 text-blue-800'
-																	: agent.type === 'Support'
-																	? 'bg-purple-100 text-purple-800'
-																	: 'bg-orange-100 text-orange-800'
-															}`}
-														>
-															{agent.type}
-														</span>
-														<span
-															className={`text-xs px-2 py-1 rounded ${
-																agent.status === 'Active'
-																	? 'bg-green-100 text-green-800'
-																	: 'bg-gray-100 text-gray-800'
-															}`}
-														>
-															{agent.status}
-														</span>
-													</div>
-													{agent.description && (
-														<p className='text-sm text-gray-600 mt-1 line-clamp-2'>
-															{agent.description}
-														</p>
-													)}
-													<p className='text-xs text-gray-400 mt-2'>
-														Created:{' '}
-														{new Date(agent.createdAt).toLocaleDateString()}
-													</p>
-												</div>
-												{!isHotelBot(agent) && (
-													<button
-														onClick={(e) => {
-															e.stopPropagation()
-															openDeleteModal(agent)
-														}}
-														className='text-red-500 hover:text-red-700 text-sm'
-													>
-														Delete
-													</button>
-												)}
-												{isHotelBot(agent) && (
-													<span className='text-xs text-green-600 bg-green-50 px-2 py-1 rounded'>
-														Protected
-													</span>
-												)}
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-						</div>
-					</div>
-
 					{/* Agent Chat Section */}
 					<div className='bg-white rounded-lg shadow-md p-6'>
 						<h2 className='text-2xl font-semibold text-gray-800 mb-6'>
@@ -595,7 +443,7 @@ export default function Home() {
 										<textarea
 											value={question}
 											onChange={(e) => setQuestion(e.target.value)}
-											className='flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none'
+											className='flex-1 px-3 py-2 bg-yellow-200 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none'
 											placeholder='Ask about check-in times, amenities, room service...'
 											rows={2}
 											required
@@ -712,6 +560,242 @@ export default function Home() {
 								)}
 							</div>
 						)}
+					</div>
+
+					{/* Agent Management Section */}
+					<div className='bg-white rounded-lg shadow-md p-6'>
+						<h2 className='text-2xl font-semibold text-gray-800 mb-6'>
+							Agent Management
+						</h2>
+
+						{/* Create Agent Form Accordion */}
+						<div className='mb-6'>
+							<button
+								onClick={() => setShowCreateForm(!showCreateForm)}
+								className='w-full flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors'
+							>
+								<div className='flex items-center'>
+									<svg
+										className='w-5 h-5 text-blue-600 mr-3'
+										fill='none'
+										stroke='currentColor'
+										viewBox='0 0 24 24'
+									>
+										<path
+											strokeLinecap='round'
+											strokeLinejoin='round'
+											strokeWidth={2}
+											d='M12 6v6m0 0v6m0-6h6m-6 0H6'
+										/>
+									</svg>
+									<span className='text-blue-800 font-medium'>
+										Create New Agent
+									</span>
+								</div>
+								<svg
+									className={`w-5 h-5 text-blue-600 transform transition-transform ${
+										showCreateForm ? 'rotate-180' : ''
+									}`}
+									fill='none'
+									stroke='currentColor'
+									viewBox='0 0 24 24'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth={2}
+										d='M19 9l-7 7-7-7'
+									/>
+								</svg>
+							</button>
+
+							{/* Collapsible Form */}
+							{showCreateForm && (
+								<div className='mt-4 p-4 border border-gray-200 rounded-lg bg-blue-50'>
+									<form onSubmit={handleSubmit(onSubmitCreateAgent)}>
+										<div className='mb-4'>
+											<label className='block text-sm font-medium text-gray-700 mb-2'>
+												Agent Name
+											</label>
+											<input
+												type='text'
+												{...register('name', {
+													required: 'Agent name is required',
+													minLength: {
+														value: 2,
+														message: 'Agent name must be at least 2 characters',
+													},
+												})}
+												className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+													errors.name ? 'border-red-500' : 'border-gray-300'
+												}`}
+												placeholder='Enter agent name'
+											/>
+											{errors.name && (
+												<p className='mt-1 text-sm text-red-600'>
+													{errors.name.message}
+												</p>
+											)}
+										</div>
+										<div className='mb-4'>
+											<label className='block text-sm font-medium text-gray-700 mb-2'>
+												Agent Type
+											</label>
+											<select
+												{...register('type', {
+													required: 'Agent type is required',
+												})}
+												className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+													errors.type ? 'border-red-500' : 'border-gray-300'
+												}`}
+											>
+												<option value='Sales'>Sales</option>
+												<option value='Support'>Support</option>
+												<option value='Marketing'>Marketing</option>
+											</select>
+											{errors.type && (
+												<p className='mt-1 text-sm text-red-600'>
+													{errors.type.message}
+												</p>
+											)}
+										</div>
+										<div className='mb-4'>
+											<label className='block text-sm font-medium text-gray-700 mb-2'>
+												Agent Status
+											</label>
+											<select
+												{...register('status', {
+													required: 'Agent status is required',
+												})}
+												className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+													errors.status ? 'border-red-500' : 'border-gray-300'
+												}`}
+											>
+												<option value='Active'>Active</option>
+												<option value='Inactive'>Inactive</option>
+											</select>
+											{errors.status && (
+												<p className='mt-1 text-sm text-red-600'>
+													{errors.status.message}
+												</p>
+											)}
+										</div>
+										<div className='mb-4'>
+											<label className='block text-sm font-medium text-gray-700 mb-2'>
+												Description (optional)
+											</label>
+											<textarea
+												{...register('description')}
+												className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+												placeholder='Enter agent description'
+												rows={3}
+											/>
+										</div>
+										<div className='flex gap-3'>
+											<button
+												type='submit'
+												disabled={isSubmitting || creating}
+												className='flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed'
+											>
+												{isSubmitting || creating
+													? 'Creating...'
+													: 'Create Agent'}
+											</button>
+											<button
+												type='button'
+												onClick={() => {
+													setShowCreateForm(false)
+													reset()
+												}}
+												className='px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50'
+											>
+												Cancel
+											</button>
+										</div>
+									</form>
+								</div>
+							)}
+						</div>
+
+						{/* Agents List */}
+						<div>
+							<h3 className='text-lg font-medium text-gray-800 mb-4'>
+								Current Agents
+							</h3>
+							{agents.length === 0 ? (
+								<p className='text-gray-500'>No agents found.</p>
+							) : (
+								<div className='space-y-3'>
+									{agents.map((agent) => (
+										<div
+											key={agent.id}
+											className='border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors'
+											onClick={() => openAgentModal(agent)}
+										>
+											<div className='flex justify-between items-start'>
+												<div className='flex-1'>
+													<h4 className='font-medium text-gray-900'>
+														{agent.name}
+														{isHotelBot(agent) && (
+															<span className='ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded'>
+																Hotel Bot
+															</span>
+														)}
+													</h4>
+													<div className='flex gap-2 mt-1'>
+														<span
+															className={`text-xs px-2 py-1 rounded ${
+																agent.type === 'Sales'
+																	? 'bg-blue-100 text-blue-800'
+																	: agent.type === 'Support'
+																	? 'bg-purple-100 text-purple-800'
+																	: 'bg-orange-100 text-orange-800'
+															}`}
+														>
+															{agent.type}
+														</span>
+														<span
+															className={`text-xs px-2 py-1 rounded ${
+																agent.status === 'Active'
+																	? 'bg-green-100 text-green-800'
+																	: 'bg-gray-100 text-gray-800'
+															}`}
+														>
+															{agent.status}
+														</span>
+													</div>
+													{agent.description && (
+														<p className='text-sm text-gray-600 mt-1 line-clamp-2'>
+															{agent.description}
+														</p>
+													)}
+													<p className='text-xs text-gray-400 mt-2'>
+														Created:{' '}
+														{new Date(agent.createdAt).toLocaleDateString()}
+													</p>
+												</div>
+												{!isHotelBot(agent) && (
+													<button
+														onClick={(e) => {
+															e.stopPropagation()
+															openDeleteModal(agent)
+														}}
+														className='text-red-500 hover:text-red-700 text-sm'
+													>
+														Delete
+													</button>
+												)}
+												{isHotelBot(agent) && (
+													<span className='text-xs text-green-600 bg-green-50 px-2 py-1 rounded'>
+														Protected
+													</span>
+												)}
+											</div>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 

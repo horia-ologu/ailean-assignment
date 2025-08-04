@@ -24,7 +24,17 @@ class AgentService {
 		try {
 			if (fs.existsSync(this.dbPath)) {
 				const data = fs.readFileSync(this.dbPath, 'utf8')
-				return JSON.parse(data)
+				const parsedData = JSON.parse(data)
+
+				// Convert string dates back to Date objects
+				if (parsedData.agents) {
+					parsedData.agents = parsedData.agents.map((agent: any) => ({
+						...agent,
+						createdAt: new Date(agent.createdAt),
+					}))
+				}
+
+				return parsedData
 			}
 		} catch (error) {
 			console.error('Error loading database:', error)

@@ -13,7 +13,6 @@ import {
 if (process.env.NODE_ENV !== 'production') {
 	dotenv.config({ path: '.env.local' })
 	console.log('📁 Loaded local environment variables')
-	console.log('🌍 Frontend URL:', process.env.FRONTEND_URL || 'Not set')
 }
 console.log('🌍 Frontend URL:', process.env.FRONTEND_URL || 'Not set')
 
@@ -55,11 +54,9 @@ const initializeApp = async () => {
 		console.log(`✅ Hotel Q&A Bot initialized with ID: ${hotelBot.id}`)
 
 		app.listen(PORT, () => {
-			const serverUrl = process.env.SERVER_URL || `http://localhost:${PORT}`
-
 			console.log(`🚀 Server is running on port ${PORT}`)
-			console.log(`📡 Health check: ${serverUrl}/api/health`)
-			console.log(`🤖 Agents API: ${serverUrl}/api/agents`)
+			console.log(`📡 Health check: /api/health`)
+			console.log(`🤖 Agents API: /api/agents`)
 			console.log(`🏨 Hotel Q&A Bot ready for questions!`)
 			console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`)
 		})
