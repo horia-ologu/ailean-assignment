@@ -31,19 +31,11 @@
       "status": "Active",
       "description": "A helpful bot that answers questions about hotel services, amenities, and policies.",
       "createdAt": "2025-08-01T06:26:00.097Z"
-    },
-    {
-      "id": "5",
-      "name": "Test Agent",
-      "type": "Sales",
-      "status": "Active",
-      "createdAt": "2025-08-04T18:50:40.856Z",
-      "description": "Test agent for date fix verification"
     }
   ],
   "metadata": {
-    "nextId": 6,
-    "lastUpdated": "2025-08-04T18:50:40.856Z",
+    "nextId": 7,
+    "lastUpdated": "2025-08-04T19:06:22.604Z",
     "version": "1.0.0"
   }
 }

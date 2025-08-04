@@ -1,14 +1,20 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useForm } from 'react-hook-form'
+import { useState, useEffect, useCallback } from 'react'
 import { apiService, Agent, CreateAgentRequest } from '../services/api'
+import {
+	ErrorAlert,
+	LoadingSpinner,
+	AgentChat,
+	AgentManagement,
+	AgentModal,
+	DeleteConfirmationModal,
+} from '../components'
 
 export default function Home() {
 	const [agents, setAgents] = useState<Agent[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
-	const chatEndRef = useRef<HTMLDivElement>(null)
 
 	// Utility function to check if an agent is a hotel bot
 	const isHotelBot = (agent: Agent) => {
@@ -16,22 +22,6 @@ export default function Home() {
 			agent.name === 'Hotel Q&A Bot' || agent.name === 'The Grand Arosa Q&A Bot'
 		)
 	}
-
-	// Form state for creating new agents
-	const {
-		register,
-		handleSubmit,
-		formState: { errors, isSubmitting },
-		reset,
-		watch,
-	} = useForm<CreateAgentRequest>({
-		defaultValues: {
-			name: '',
-			type: 'Sales',
-			status: 'Active',
-			description: '',
-		},
-	})
 
 	const [creating, setCreating] = useState(false)
 
@@ -110,13 +100,6 @@ export default function Home() {
 		loadAgents()
 	}, [loadAgents])
 
-	// Auto-scroll to bottom when chat history changes
-	useEffect(() => {
-		if (chatEndRef.current) {
-			chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
-		}
-	}, [chatHistory, askingQuestion])
-
 	// Handle agent selection for chat
 	const handleAgentSelection = (agentId: string) => {
 		const agent = agents.find((a) => a.id === agentId)
@@ -142,7 +125,7 @@ export default function Home() {
 
 			const newAgent = await apiService.createAgent(createAgentData)
 			setAgents((prev) => [...prev, newAgent])
-			reset() // Reset form using React Hook Form
+			// Reset will be handled by the component
 			setShowCreateForm(false) // Close the accordion after successful creation
 		} catch (err) {
 			setError('Failed to create agent')
@@ -294,11 +277,7 @@ export default function Home() {
 	}
 
 	if (loading) {
-		return (
-			<div className='min-h-screen bg-gray-50 flex items-center justify-center'>
-				<div className='text-xl text-gray-600'>Loading agents...</div>
-			</div>
-		)
+		return <LoadingSpinner />
 	}
 
 	return (
@@ -308,495 +287,34 @@ export default function Home() {
 					Agent Management System
 				</h1>
 
-				{error && (
-					<div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6'>
-						{error}
-						<button
-							onClick={() => setError(null)}
-							className='float-right text-red-500 hover:text-red-700'
-						>
-							×
-						</button>
-					</div>
-				)}
+				{error && <ErrorAlert error={error} onClose={() => setError(null)} />}
 
 				<div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
 					{/* Agent Chat Section */}
-					<div className='bg-white rounded-lg shadow-md p-6'>
-						<h2 className='text-2xl font-semibold text-gray-800 mb-6'>
-							Agent Chat
-						</h2>
-
-						{/* Agent Selection */}
-						<div className='mb-6'>
-							<label
-								htmlFor='agent-select'
-								className='block text-sm font-medium text-gray-700 mb-2'
-							>
-								Select Agent:
-							</label>
-							<select
-								id='agent-select'
-								value={selectedAgentId || ''}
-								onChange={(e) => handleAgentSelection(e.target.value)}
-								className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500'
-							>
-								<option value=''>Choose an agent...</option>
-								{agents.map((agent) => (
-									<option key={agent.id} value={agent.id}>
-										{agent.name}
-									</option>
-								))}
-							</select>
-						</div>
-
-						{selectedAgentForChat ? (
-							<div>
-								{/* Selected Agent Info */}
-								<div className='bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4'>
-									<div className='flex items-center'>
-										<div className='text-2xl mr-3'>
-											{isHotelBot(selectedAgentForChat) ? '🏨' : '🤖'}
-										</div>
-										<div>
-											<h3 className='font-semibold text-blue-900'>
-												{selectedAgentForChat.name}
-											</h3>
-											<p className='text-sm text-blue-700'>
-												{selectedAgentForChat.description ||
-													'No description available'}
-											</p>
-										</div>
-									</div>
-								</div>
-
-								{/* Chat History */}
-								<div className='bg-gray-50 border rounded-lg p-4 mb-4 h-96 overflow-y-auto'>
-									{chatHistory.length === 0 ? (
-										<div className='text-center text-gray-500 mt-8'>
-											<div className='text-4xl mb-2'>
-												{isHotelBot(selectedAgentForChat) ? '🏨' : '💬'}
-											</div>
-											<p>Welcome to {selectedAgentForChat.name}!</p>
-											<p className='text-sm'>
-												{isHotelBot(selectedAgentForChat)
-													? 'Ask me anything about our hotel services.'
-													: 'Start a conversation with this agent.'}
-											</p>
-										</div>
-									) : (
-										<div className='space-y-4'>
-											{chatHistory.map((message) => (
-												<div
-													key={message.id}
-													className={`flex ${
-														message.type === 'user'
-															? 'justify-end'
-															: 'justify-start'
-													}`}
-												>
-													<div
-														className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-															message.type === 'user'
-																? 'bg-blue-500 text-white'
-																: 'bg-white border border-gray-200 text-gray-800'
-														}`}
-													>
-														<p className='text-sm'>{message.message}</p>
-														<p
-															className={`text-xs mt-1 ${
-																message.type === 'user'
-																	? 'text-blue-100'
-																	: 'text-gray-400'
-															}`}
-														>
-															{new Date(message.timestamp).toLocaleTimeString()}
-														</p>
-													</div>
-												</div>
-											))}
-											{askingQuestion && (
-												<div className='flex justify-start'>
-													<div className='bg-white border border-gray-200 text-gray-800 px-4 py-2 rounded-lg'>
-														<div className='flex items-center space-x-1'>
-															<div className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'></div>
-															<div
-																className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
-																style={{ animationDelay: '0.1s' }}
-															></div>
-															<div
-																className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
-																style={{ animationDelay: '0.2s' }}
-															></div>
-														</div>
-													</div>
-												</div>
-											)}
-											<div ref={chatEndRef} />
-										</div>
-									)}
-								</div>
-
-								{/* Chat Input */}
-								<form onSubmit={handleAskQuestion} className='mb-6'>
-									<div className='flex space-x-2'>
-										<textarea
-											value={question}
-											onChange={(e) => setQuestion(e.target.value)}
-											className='flex-1 px-3 py-2 bg-yellow-200 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none'
-											placeholder='Ask about check-in times, amenities, room service...'
-											rows={2}
-											required
-											onKeyPress={(e) => {
-												if (e.key === 'Enter' && !e.shiftKey) {
-													e.preventDefault()
-													handleAskQuestion(e)
-												}
-											}}
-										/>
-										<button
-											type='submit'
-											disabled={askingQuestion || !question.trim()}
-											className='px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center'
-										>
-											<svg
-												className='w-5 h-5'
-												fill='none'
-												stroke='currentColor'
-												viewBox='0 0 24 24'
-											>
-												<path
-													strokeLinecap='round'
-													strokeLinejoin='round'
-													strokeWidth={2}
-													d='M12 19l9 2-9-18-9 18 9-2zm0 0v-8'
-												/>
-											</svg>
-										</button>
-									</div>
-								</form>
-
-								<div className='text-sm text-gray-600'>
-									<h4 className='font-medium mb-2'>💬 Try asking about:</h4>
-									<div className='grid grid-cols-2 gap-2'>
-										{isHotelBot(selectedAgentForChat) ? (
-											<>
-												<button
-													onClick={() =>
-														setQuestion('What are your check-in times?')
-													}
-													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-												>
-													⏰ Check-in times
-												</button>
-												<button
-													onClick={() =>
-														setQuestion('Do you have room service?')
-													}
-													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-												>
-													🍽️ Room service
-												</button>
-												<button
-													onClick={() => setQuestion('Is there free WiFi?')}
-													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-												>
-													📶 WiFi information
-												</button>
-												<button
-													onClick={() =>
-														setQuestion('What amenities do you have?')
-													}
-													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-												>
-													🏊 Hotel amenities
-												</button>
-											</>
-										) : (
-											<>
-												<button
-													onClick={() => setQuestion('Hello!')}
-													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-												>
-													👋 Say hello
-												</button>
-												<button
-													onClick={() => setQuestion('How can you help me?')}
-													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-												>
-													❓ Get help
-												</button>
-												<button
-													onClick={() => setQuestion('What can you do?')}
-													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-												>
-													🔧 Learn capabilities
-												</button>
-												<button
-													onClick={() => setQuestion('Tell me about yourself')}
-													className='text-left p-2 bg-gray-50 hover:bg-gray-100 rounded text-xs'
-												>
-													ℹ️ About agent
-												</button>
-											</>
-										)}
-									</div>
-								</div>
-							</div>
-						) : (
-							<div className='text-center text-gray-500 py-8'>
-								<div className='text-4xl mb-4'>🤖</div>
-								<p className='text-lg font-medium mb-2'>No agent selected</p>
-								<p className='text-sm'>
-									Please select an agent from the dropdown above to start
-									chatting.
-								</p>
-								{agents.length === 0 && (
-									<div className='mt-4'>
-										<p className='text-sm text-gray-400 mb-2'>
-											No agents available. Create one first!
-										</p>
-									</div>
-								)}
-							</div>
-						)}
-					</div>
+					<AgentChat
+						agents={agents}
+						selectedAgentId={selectedAgentId}
+						selectedAgentForChat={selectedAgentForChat}
+						isHotelBot={isHotelBot}
+						onAgentSelection={handleAgentSelection}
+						question={question}
+						setQuestion={setQuestion}
+						chatHistory={chatHistory}
+						askingQuestion={askingQuestion}
+						onAskQuestion={handleAskQuestion}
+					/>
 
 					{/* Agent Management Section */}
-					<div className='bg-white rounded-lg shadow-md p-6'>
-						<h2 className='text-2xl font-semibold text-gray-800 mb-6'>
-							Agent Management
-						</h2>
-
-						{/* Create Agent Form Accordion */}
-						<div className='mb-6'>
-							<button
-								onClick={() => setShowCreateForm(!showCreateForm)}
-								className='w-full flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors'
-							>
-								<div className='flex items-center'>
-									<svg
-										className='w-5 h-5 text-blue-600 mr-3'
-										fill='none'
-										stroke='currentColor'
-										viewBox='0 0 24 24'
-									>
-										<path
-											strokeLinecap='round'
-											strokeLinejoin='round'
-											strokeWidth={2}
-											d='M12 6v6m0 0v6m0-6h6m-6 0H6'
-										/>
-									</svg>
-									<span className='text-blue-800 font-medium'>
-										Create New Agent
-									</span>
-								</div>
-								<svg
-									className={`w-5 h-5 text-blue-600 transform transition-transform ${
-										showCreateForm ? 'rotate-180' : ''
-									}`}
-									fill='none'
-									stroke='currentColor'
-									viewBox='0 0 24 24'
-								>
-									<path
-										strokeLinecap='round'
-										strokeLinejoin='round'
-										strokeWidth={2}
-										d='M19 9l-7 7-7-7'
-									/>
-								</svg>
-							</button>
-
-							{/* Collapsible Form */}
-							{showCreateForm && (
-								<div className='mt-4 p-4 border border-gray-200 rounded-lg bg-blue-50'>
-									<form onSubmit={handleSubmit(onSubmitCreateAgent)}>
-										<div className='mb-4'>
-											<label className='block text-sm font-medium text-gray-700 mb-2'>
-												Agent Name
-											</label>
-											<input
-												type='text'
-												{...register('name', {
-													required: 'Agent name is required',
-													minLength: {
-														value: 2,
-														message: 'Agent name must be at least 2 characters',
-													},
-												})}
-												className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-													errors.name ? 'border-red-500' : 'border-gray-300'
-												}`}
-												placeholder='Enter agent name'
-											/>
-											{errors.name && (
-												<p className='mt-1 text-sm text-red-600'>
-													{errors.name.message}
-												</p>
-											)}
-										</div>
-										<div className='mb-4'>
-											<label className='block text-sm font-medium text-gray-700 mb-2'>
-												Agent Type
-											</label>
-											<select
-												{...register('type', {
-													required: 'Agent type is required',
-												})}
-												className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-													errors.type ? 'border-red-500' : 'border-gray-300'
-												}`}
-											>
-												<option value='Sales'>Sales</option>
-												<option value='Support'>Support</option>
-												<option value='Marketing'>Marketing</option>
-											</select>
-											{errors.type && (
-												<p className='mt-1 text-sm text-red-600'>
-													{errors.type.message}
-												</p>
-											)}
-										</div>
-										<div className='mb-4'>
-											<label className='block text-sm font-medium text-gray-700 mb-2'>
-												Agent Status
-											</label>
-											<select
-												{...register('status', {
-													required: 'Agent status is required',
-												})}
-												className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-													errors.status ? 'border-red-500' : 'border-gray-300'
-												}`}
-											>
-												<option value='Active'>Active</option>
-												<option value='Inactive'>Inactive</option>
-											</select>
-											{errors.status && (
-												<p className='mt-1 text-sm text-red-600'>
-													{errors.status.message}
-												</p>
-											)}
-										</div>
-										<div className='mb-4'>
-											<label className='block text-sm font-medium text-gray-700 mb-2'>
-												Description (optional)
-											</label>
-											<textarea
-												{...register('description')}
-												className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-												placeholder='Enter agent description'
-												rows={3}
-											/>
-										</div>
-										<div className='flex gap-3'>
-											<button
-												type='submit'
-												disabled={isSubmitting || creating}
-												className='flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed'
-											>
-												{isSubmitting || creating
-													? 'Creating...'
-													: 'Create Agent'}
-											</button>
-											<button
-												type='button'
-												onClick={() => {
-													setShowCreateForm(false)
-													reset()
-												}}
-												className='px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50'
-											>
-												Cancel
-											</button>
-										</div>
-									</form>
-								</div>
-							)}
-						</div>
-
-						{/* Agents List */}
-						<div>
-							<h3 className='text-lg font-medium text-gray-800 mb-4'>
-								Current Agents
-							</h3>
-							{agents.length === 0 ? (
-								<p className='text-gray-500'>No agents found.</p>
-							) : (
-								<div className='space-y-3'>
-									{agents.map((agent) => (
-										<div
-											key={agent.id}
-											className='border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors'
-											onClick={() => openAgentModal(agent)}
-										>
-											<div className='flex justify-between items-start'>
-												<div className='flex-1'>
-													<h4 className='font-medium text-gray-900'>
-														{agent.name}
-														{isHotelBot(agent) && (
-															<span className='ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded'>
-																Hotel Bot
-															</span>
-														)}
-													</h4>
-													<div className='flex gap-2 mt-1'>
-														<span
-															className={`text-xs px-2 py-1 rounded ${
-																agent.type === 'Sales'
-																	? 'bg-blue-100 text-blue-800'
-																	: agent.type === 'Support'
-																	? 'bg-purple-100 text-purple-800'
-																	: 'bg-orange-100 text-orange-800'
-															}`}
-														>
-															{agent.type}
-														</span>
-														<span
-															className={`text-xs px-2 py-1 rounded ${
-																agent.status === 'Active'
-																	? 'bg-green-100 text-green-800'
-																	: 'bg-gray-100 text-gray-800'
-															}`}
-														>
-															{agent.status}
-														</span>
-													</div>
-													{agent.description && (
-														<p className='text-sm text-gray-600 mt-1 line-clamp-2'>
-															{agent.description}
-														</p>
-													)}
-													<p className='text-xs text-gray-400 mt-2'>
-														Created:{' '}
-														{new Date(agent.createdAt).toLocaleDateString()}
-													</p>
-												</div>
-												{!isHotelBot(agent) && (
-													<button
-														onClick={(e) => {
-															e.stopPropagation()
-															openDeleteModal(agent)
-														}}
-														className='text-red-500 hover:text-red-700 text-sm'
-													>
-														Delete
-													</button>
-												)}
-												{isHotelBot(agent) && (
-													<span className='text-xs text-green-600 bg-green-50 px-2 py-1 rounded'>
-														Protected
-													</span>
-												)}
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-						</div>
-					</div>
+					<AgentManagement
+						agents={agents}
+						isHotelBot={isHotelBot}
+						showCreateForm={showCreateForm}
+						setShowCreateForm={setShowCreateForm}
+						onCreateAgent={onSubmitCreateAgent}
+						onAgentClick={openAgentModal}
+						onDeleteClick={openDeleteModal}
+						isCreating={creating}
+					/>
 				</div>
 
 				{/* Connection Status */}
@@ -807,347 +325,21 @@ export default function Home() {
 
 				{/* Agent Details Modal */}
 				{showModal && selectedAgent && (
-					<div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
-						<div className='bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
-							{/* Modal Header */}
-							<div className='flex justify-between items-center p-6 border-b'>
-								<h3 className='text-2xl font-semibold text-gray-900'>
-									Agent Details
-								</h3>
-								<button
-									onClick={closeAgentModal}
-									className='text-gray-400 hover:text-gray-600 transition-colors'
-								>
-									<svg
-										className='w-6 h-6'
-										fill='none'
-										stroke='currentColor'
-										viewBox='0 0 24 24'
-									>
-										<path
-											strokeLinecap='round'
-											strokeLinejoin='round'
-											strokeWidth={2}
-											d='M6 18L18 6M6 6l12 12'
-										/>
-									</svg>
-								</button>
-							</div>
-
-							{/* Modal Body */}
-							<div className='p-6'>
-								<div className='space-y-6'>
-									{/* Agent Name */}
-									<div>
-										<label className='block text-sm font-medium text-gray-700 mb-2'>
-											Agent Name
-										</label>
-										<div className='flex items-center'>
-											<p className='text-lg font-semibold text-gray-900'>
-												{selectedAgent.name}
-											</p>
-											{isHotelBot(selectedAgent) && (
-												<span className='ml-3 bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full'>
-													🏨 Hotel Bot
-												</span>
-											)}
-										</div>
-									</div>
-
-									{/* Agent Type and Status */}
-									<div className='grid grid-cols-2 gap-4'>
-										<div>
-											<label className='block text-sm font-medium text-gray-700 mb-2'>
-												Type
-											</label>
-											<span
-												className={`inline-block px-3 py-2 rounded-full text-sm font-medium ${
-													selectedAgent.type === 'Sales'
-														? 'bg-blue-100 text-blue-800'
-														: selectedAgent.type === 'Support'
-														? 'bg-purple-100 text-purple-800'
-														: 'bg-orange-100 text-orange-800'
-												}`}
-											>
-												{selectedAgent.type}
-											</span>
-										</div>
-										<div>
-											<label className='block text-sm font-medium text-gray-700 mb-2'>
-												Status
-											</label>
-											<span
-												className={`inline-block px-3 py-2 rounded-full text-sm font-medium ${
-													selectedAgent.status === 'Active'
-														? 'bg-green-100 text-green-800'
-														: 'bg-gray-100 text-gray-800'
-												}`}
-											>
-												{selectedAgent.status}
-											</span>
-										</div>
-									</div>
-
-									{/* Agent ID */}
-									<div>
-										<label className='block text-sm font-medium text-gray-700 mb-2'>
-											Agent ID
-										</label>
-										<p className='text-sm text-gray-600 font-mono bg-gray-50 px-3 py-2 rounded border'>
-											{selectedAgent.id}
-										</p>
-									</div>
-
-									{/* Description */}
-									<div>
-										<label className='block text-sm font-medium text-gray-700 mb-2'>
-											Description
-										</label>
-										{selectedAgent.description ? (
-											<p className='text-gray-700 bg-gray-50 px-4 py-3 rounded border leading-relaxed'>
-												{selectedAgent.description}
-											</p>
-										) : (
-											<p className='text-gray-500 italic'>
-												No description provided
-											</p>
-										)}
-									</div>
-
-									{/* Creation Date */}
-									<div>
-										<label className='block text-sm font-medium text-gray-700 mb-2'>
-											Created At
-										</label>
-										<div className='text-gray-700'>
-											<p className='font-medium'>
-												{new Date(selectedAgent.createdAt).toLocaleDateString(
-													'en-US',
-													{
-														weekday: 'long',
-														year: 'numeric',
-														month: 'long',
-														day: 'numeric',
-													}
-												)}
-											</p>
-											<p className='text-sm text-gray-500'>
-												{new Date(selectedAgent.createdAt).toLocaleTimeString(
-													'en-US',
-													{
-														hour: '2-digit',
-														minute: '2-digit',
-														second: '2-digit',
-													}
-												)}
-											</p>
-										</div>
-									</div>
-
-									{/* Agent Type */}
-									<div>
-										<label className='block text-sm font-medium text-gray-700 mb-2'>
-											Agent Type
-										</label>
-										<div className='flex items-center space-x-2'>
-											{isHotelBot(selectedAgent) ? (
-												<>
-													<span className='bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm'>
-														🤖 Q&A Bot
-													</span>
-													<span className='bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm'>
-														🏨 Hotel Services
-													</span>
-												</>
-											) : (
-												<span className='bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm'>
-													👤 Custom Agent
-												</span>
-											)}
-										</div>
-									</div>
-
-									{/* Capabilities (for Hotel Q&A Bot) */}
-									{isHotelBot(selectedAgent) && (
-										<div>
-											<label className='block text-sm font-medium text-gray-700 mb-2'>
-												Bot Capabilities
-											</label>
-											<div className='grid grid-cols-2 gap-3'>
-												<div className='bg-blue-50 p-3 rounded border'>
-													<div className='text-blue-600 text-sm font-medium'>
-														⏰ Check-in/out
-													</div>
-													<div className='text-blue-500 text-xs'>
-														Operating hours & procedures
-													</div>
-												</div>
-												<div className='bg-green-50 p-3 rounded border'>
-													<div className='text-green-600 text-sm font-medium'>
-														🍽️ Room Service
-													</div>
-													<div className='text-green-500 text-xs'>
-														Menu & availability
-													</div>
-												</div>
-												<div className='bg-purple-50 p-3 rounded border'>
-													<div className='text-purple-600 text-sm font-medium'>
-														📶 WiFi & Tech
-													</div>
-													<div className='text-purple-500 text-xs'>
-														Internet & connectivity
-													</div>
-												</div>
-												<div className='bg-orange-50 p-3 rounded border'>
-													<div className='text-orange-600 text-sm font-medium'>
-														🏊 Amenities
-													</div>
-													<div className='text-orange-500 text-xs'>
-														Pool, gym, spa services
-													</div>
-												</div>
-												<div className='bg-red-50 p-3 rounded border'>
-													<div className='text-red-600 text-sm font-medium'>
-														🚗 Parking
-													</div>
-													<div className='text-red-500 text-xs'>
-														Availability & pricing
-													</div>
-												</div>
-												<div className='bg-yellow-50 p-3 rounded border'>
-													<div className='text-yellow-600 text-sm font-medium'>
-														📋 Policies
-													</div>
-													<div className='text-yellow-500 text-xs'>
-														Cancellation & rules
-													</div>
-												</div>
-											</div>
-										</div>
-									)}
-								</div>
-							</div>
-
-							{/* Modal Footer */}
-							<div className='flex justify-between items-center p-6 border-t bg-gray-50'>
-								<button
-									onClick={closeAgentModal}
-									className='px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors'
-								>
-									Close
-								</button>
-								<button
-									onClick={() => {
-										openDeleteModal(selectedAgent)
-										closeAgentModal()
-									}}
-									className='px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors'
-								>
-									Delete Agent
-								</button>
-							</div>
-						</div>
-					</div>
+					<AgentModal
+						agent={selectedAgent}
+						isHotelBot={isHotelBot}
+						onClose={closeAgentModal}
+						onDelete={openDeleteModal}
+					/>
 				)}
 
 				{/* Delete Confirmation Modal */}
 				{showDeleteModal && agentToDelete && (
-					<div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50'>
-						<div className='bg-white rounded-lg shadow-xl max-w-md w-full'>
-							{/* Modal Header */}
-							<div className='flex justify-between items-center p-6 border-b'>
-								<h2 className='text-xl font-semibold text-red-600'>
-									Confirm Deletion
-								</h2>
-								<button
-									onClick={closeDeleteModal}
-									className='text-gray-400 hover:text-gray-600 text-2xl'
-								>
-									×
-								</button>
-							</div>
-
-							{/* Modal Body */}
-							<div className='p-6'>
-								<div className='flex items-start space-x-4'>
-									<div className='flex-shrink-0'>
-										<div className='w-12 h-12 bg-red-100 rounded-full flex items-center justify-center'>
-											<svg
-												className='w-6 h-6 text-red-600'
-												fill='none'
-												stroke='currentColor'
-												viewBox='0 0 24 24'
-											>
-												<path
-													strokeLinecap='round'
-													strokeLinejoin='round'
-													strokeWidth={2}
-													d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z'
-												/>
-											</svg>
-										</div>
-									</div>
-									<div className='flex-1'>
-										<h3 className='text-lg font-medium text-gray-900 mb-2'>
-											Delete Agent &ldquo;{agentToDelete.name}&rdquo;
-										</h3>
-										<div className='flex gap-2 mb-3'>
-											<span
-												className={`text-xs px-2 py-1 rounded ${
-													agentToDelete.type === 'Sales'
-														? 'bg-blue-100 text-blue-800'
-														: agentToDelete.type === 'Support'
-														? 'bg-purple-100 text-purple-800'
-														: 'bg-orange-100 text-orange-800'
-												}`}
-											>
-												{agentToDelete.type}
-											</span>
-											<span
-												className={`text-xs px-2 py-1 rounded ${
-													agentToDelete.status === 'Active'
-														? 'bg-green-100 text-green-800'
-														: 'bg-gray-100 text-gray-800'
-												}`}
-											>
-												{agentToDelete.status}
-											</span>
-										</div>
-										<p className='text-sm text-gray-600 mb-4'>
-											Are you sure you want to delete this agent? This action
-											cannot be undone.
-										</p>
-										{agentToDelete.description && (
-											<div className='bg-gray-50 p-3 rounded border'>
-												<p className='text-xs text-gray-500 uppercase tracking-wide mb-1'>
-													Agent Description
-												</p>
-												<p className='text-sm text-gray-700'>
-													{agentToDelete.description}
-												</p>
-											</div>
-										)}
-									</div>
-								</div>
-							</div>
-
-							{/* Modal Footer */}
-							<div className='flex justify-end space-x-3 p-6 border-t bg-gray-50'>
-								<button
-									onClick={closeDeleteModal}
-									className='px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors'
-								>
-									Cancel
-								</button>
-								<button
-									onClick={confirmDelete}
-									className='px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 font-medium transition-colors'
-								>
-									Delete Agent
-								</button>
-							</div>
-						</div>
-					</div>
+					<DeleteConfirmationModal
+						agent={agentToDelete}
+						onClose={closeDeleteModal}
+						onConfirm={confirmDelete}
+					/>
 				)}
 			</div>
 		</div>
