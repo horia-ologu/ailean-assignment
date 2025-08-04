@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { apiService, Agent } from '../services/api'
+import { apiService, Agent, CreateAgentRequest } from '../services/api'
 
 export default function Home() {
 	const [agents, setAgents] = useState<Agent[]>([])
@@ -122,12 +122,17 @@ export default function Home() {
 
 		try {
 			setCreating(true)
-			const newAgent = await apiService.createAgent({
+			const createAgentData: CreateAgentRequest = {
 				name: newAgentName,
 				type: newAgentType,
 				status: newAgentStatus,
-				description: newAgentDescription || undefined,
-			})
+			}
+
+			if (newAgentDescription.trim()) {
+				createAgentData.description = newAgentDescription
+			}
+
+			const newAgent = await apiService.createAgent(createAgentData)
 			setAgents((prev) => [...prev, newAgent])
 			setNewAgentName('')
 			setNewAgentType('Sales')

@@ -1,14 +1,7 @@
-export interface Agent {
-	id: string
-	name: string
-	type: 'Sales' | 'Support' | 'Marketing'
-	status: 'Active' | 'Inactive'
-	description?: string
-	createdAt: Date
-}
+// Shared types between frontend and backend
+// These types represent the API contract
 
-// API response types (with string dates for JSON serialization)
-export interface AgentResponse {
+export interface Agent {
 	id: string
 	name: string
 	type: 'Sales' | 'Support' | 'Marketing'
@@ -43,6 +36,30 @@ export interface AskQuestionResponse {
 	timestamp: string // ISO date string for API transport
 }
 
+export interface HealthCheckResponse {
+	status: string
+	timestamp: string
+	service: string
+}
+
+// Backend-only types (with actual Date objects)
+export interface AgentEntity {
+	id: string
+	name: string
+	type: 'Sales' | 'Support' | 'Marketing'
+	status: 'Active' | 'Inactive'
+	description?: string
+	createdAt: Date // Actual Date object in backend
+}
+
+export interface AskQuestionResponseEntity {
+	agentId: string
+	agentName: string
+	question: string
+	answer: string
+	timestamp: Date // Actual Date object in backend
+}
+
 // Type guards for runtime type checking
 export function isValidAgentType(type: string): type is Agent['type'] {
 	return ['Sales', 'Support', 'Marketing'].includes(type)
@@ -52,10 +69,6 @@ export function isValidAgentStatus(status: string): status is Agent['status'] {
 	return ['Active', 'Inactive'].includes(status)
 }
 
-// Utility function to convert Agent to AgentResponse
-export function toAgentResponse(agent: Agent): AgentResponse {
-	return {
-		...agent,
-		createdAt: agent.createdAt.toISOString(),
-	}
-}
+// Utility types for better type safety
+export type AgentType = Agent['type']
+export type AgentStatus = Agent['status']

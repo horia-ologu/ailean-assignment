@@ -2,8 +2,12 @@ import { Request, Response } from 'express'
 import { agentService } from '../services/AgentService'
 import {
 	CreateAgentRequest,
+	UpdateAgentRequest,
 	AskQuestionRequest,
 	AskQuestionResponse,
+	toAgentResponse,
+	isValidAgentType,
+	isValidAgentStatus,
 } from '../models/Agent'
 
 export class AgentController {
@@ -11,7 +15,8 @@ export class AgentController {
 	getAllAgents = (req: Request, res: Response): void => {
 		try {
 			const agents = agentService.getAllAgents()
-			res.json(agents)
+			const agentResponses = agents.map(toAgentResponse)
+			res.json(agentResponses)
 		} catch (error) {
 			console.error('Error getting agents:', error)
 			res.status(500).json({ error: 'Internal server error' })
@@ -22,6 +27,12 @@ export class AgentController {
 	getAgentById = (req: Request, res: Response): void => {
 		try {
 			const { id } = req.params
+
+			if (!id) {
+				res.status(400).json({ error: 'Agent ID is required' })
+				return
+			}
+
 			const agent = agentService.getAgentById(id)
 
 			if (!agent) {
@@ -29,7 +40,7 @@ export class AgentController {
 				return
 			}
 
-			res.json(agent)
+			res.json(toAgentResponse(agent))
 		} catch (error) {
 			console.error('Error getting agent by ID:', error)
 			res.status(500).json({ error: 'Internal server error' })
@@ -46,14 +57,14 @@ export class AgentController {
 				return
 			}
 
-			if (!type || !['Sales', 'Support', 'Marketing'].includes(type)) {
+			if (!type || !isValidAgentType(type)) {
 				res
 					.status(400)
 					.json({ error: 'Type must be Sales, Support, or Marketing' })
 				return
 			}
 
-			if (!status || !['Active', 'Inactive'].includes(status)) {
+			if (!status || !isValidAgentStatus(status)) {
 				res.status(400).json({ error: 'Status must be Active or Inactive' })
 				return
 			}
@@ -64,7 +75,7 @@ export class AgentController {
 				status,
 				description
 			)
-			res.status(201).json(newAgent)
+			res.status(201).json(toAgentResponse(newAgent))
 		} catch (error) {
 			console.error('Error creating agent:', error)
 			res.status(500).json({ error: 'Internal server error' })
@@ -75,17 +86,22 @@ export class AgentController {
 	updateAgent = (req: Request, res: Response): void => {
 		try {
 			const { id } = req.params
-			const { name, type, status, description }: Partial<CreateAgentRequest> =
-				req.body
 
-			if (type && !['Sales', 'Support', 'Marketing'].includes(type)) {
+			if (!id) {
+				res.status(400).json({ error: 'Agent ID is required' })
+				return
+			}
+
+			const { name, type, status, description }: UpdateAgentRequest = req.body
+
+			if (type && !isValidAgentType(type)) {
 				res
 					.status(400)
 					.json({ error: 'Type must be Sales, Support, or Marketing' })
 				return
 			}
 
-			if (status && !['Active', 'Inactive'].includes(status)) {
+			if (status && !isValidAgentStatus(status)) {
 				res.status(400).json({ error: 'Status must be Active or Inactive' })
 				return
 			}
@@ -103,7 +119,7 @@ export class AgentController {
 				return
 			}
 
-			res.json(updatedAgent)
+			res.json(toAgentResponse(updatedAgent))
 		} catch (error) {
 			console.error('Error updating agent:', error)
 			res.status(500).json({ error: 'Internal server error' })
@@ -114,6 +130,12 @@ export class AgentController {
 	deleteAgent = (req: Request, res: Response): void => {
 		try {
 			const { id } = req.params
+
+			if (!id) {
+				res.status(400).json({ error: 'Agent ID is required' })
+				return
+			}
+
 			const deletedAgent = agentService.deleteAgent(id)
 
 			if (!deletedAgent) {
@@ -121,7 +143,7 @@ export class AgentController {
 				return
 			}
 
-			res.json(deletedAgent)
+			res.json(toAgentResponse(deletedAgent))
 		} catch (error) {
 			console.error('Error deleting agent:', error)
 			res.status(500).json({ error: 'Internal server error' })
@@ -132,6 +154,12 @@ export class AgentController {
 	askQuestion = (req: Request, res: Response): void => {
 		try {
 			const { id } = req.params
+
+			if (!id) {
+				res.status(400).json({ error: 'Agent ID is required' })
+				return
+			}
+
 			const { question }: AskQuestionRequest = req.body
 
 			if (!question || question.trim() === '') {
@@ -171,7 +199,7 @@ export class AgentController {
 				agentName: agent.name,
 				question: question.trim(),
 				answer,
-				timestamp: new Date(),
+				timestamp: new Date().toISOString(),
 			}
 
 			res.json(response)
@@ -185,7 +213,7 @@ export class AgentController {
 	healthCheck = (req: Request, res: Response): void => {
 		res.json({
 			status: 'OK',
-			timestamp: new Date(),
+			timestamp: new Date().toISOString(),
 			service: 'Agent Management API',
 		})
 	}

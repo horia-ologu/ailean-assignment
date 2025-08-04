@@ -156,8 +156,12 @@ class AgentService {
 			name,
 			type,
 			status,
-			description,
 			createdAt: new Date(),
+		}
+
+		// Only add description if it's provided
+		if (description !== undefined) {
+			newAgent.description = description
 		}
 
 		this.db.agents.push(newAgent)
@@ -182,14 +186,20 @@ class AgentService {
 			return null
 		}
 
-		if (name) this.db.agents[agentIndex].name = name
-		if (type) this.db.agents[agentIndex].type = type
-		if (status) this.db.agents[agentIndex].status = status
-		if (description !== undefined)
-			this.db.agents[agentIndex].description = description
+		const agent = this.db.agents[agentIndex]
+		if (!agent) {
+			return null
+		}
+
+		if (name) agent.name = name
+		if (type) agent.type = type
+		if (status) agent.status = status
+		if (description !== undefined) {
+			agent.description = description
+		}
 
 		this.saveDatabase()
-		return this.db.agents[agentIndex]
+		return agent
 	}
 
 	deleteAgent(id: string): Agent | null {
@@ -203,7 +213,7 @@ class AgentService {
 
 		const deletedAgent = this.db.agents.splice(agentIndex, 1)[0]
 		this.saveDatabase()
-		return deletedAgent
+		return deletedAgent || null
 	}
 
 	isHotelQABot(agent: Agent): boolean {

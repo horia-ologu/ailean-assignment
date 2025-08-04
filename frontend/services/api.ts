@@ -11,19 +11,27 @@ if (process.env.NODE_ENV === 'development') {
 	console.log('🔗 API Base URL:', API_BASE_URL)
 }
 console.log('🔗 API Base URL:', API_BASE_URL)
+// Shared API types
 export interface Agent {
 	id: string
 	name: string
 	type: 'Sales' | 'Support' | 'Marketing'
 	status: 'Active' | 'Inactive'
 	description?: string
-	createdAt: string
+	createdAt: string // ISO date string for API transport
 }
 
 export interface CreateAgentRequest {
 	name: string
 	type: 'Sales' | 'Support' | 'Marketing'
 	status: 'Active' | 'Inactive'
+	description?: string
+}
+
+export interface UpdateAgentRequest {
+	name?: string
+	type?: 'Sales' | 'Support' | 'Marketing'
+	status?: 'Active' | 'Inactive'
 	description?: string
 }
 
@@ -36,7 +44,22 @@ export interface AskQuestionResponse {
 	agentName: string
 	question: string
 	answer: string
+	timestamp: string // ISO date string for API transport
+}
+
+export interface HealthCheckResponse {
+	status: string
 	timestamp: string
+	service: string
+}
+
+// Type guards for runtime type checking
+export function isValidAgentType(type: string): type is Agent['type'] {
+	return ['Sales', 'Support', 'Marketing'].includes(type)
+}
+
+export function isValidAgentStatus(status: string): status is Agent['status'] {
+	return ['Active', 'Inactive'].includes(status)
 }
 
 class ApiService {
@@ -68,10 +91,7 @@ class ApiService {
 	}
 
 	// Update an agent
-	async updateAgent(
-		id: string,
-		agent: Partial<CreateAgentRequest>
-	): Promise<Agent> {
+	async updateAgent(id: string, agent: UpdateAgentRequest): Promise<Agent> {
 		const response = await this.client.put<Agent>(`/agents/${id}`, agent)
 		return response.data
 	}
@@ -95,12 +115,8 @@ class ApiService {
 	}
 
 	// Health check
-	async healthCheck(): Promise<{
-		status: string
-		timestamp: string
-		service: string
-	}> {
-		const response = await this.client.get('/health')
+	async healthCheck(): Promise<HealthCheckResponse> {
+		const response = await this.client.get<HealthCheckResponse>('/health')
 		return response.data
 	}
 }

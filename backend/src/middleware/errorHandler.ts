@@ -5,14 +5,15 @@ export const errorHandler = (
 	req: Request,
 	res: Response,
 	next: NextFunction
-) => {
+): void => {
 	// Handle CORS errors specifically
 	if (err.message === 'Not allowed by CORS') {
-		return res.status(403).json({
+		res.status(403).json({
 			error: 'Forbidden',
 			message: 'Origin not allowed by CORS policy',
 			origin: req.headers.origin || 'unknown',
 		})
+		return
 	}
 
 	console.error('Unhandled error:', err)
