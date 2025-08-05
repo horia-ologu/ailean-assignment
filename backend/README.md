@@ -53,33 +53,33 @@ Hotel Q&A Bot:
 
 ```typescript
 interface Agent {
-  id: string
-  name: string
-  type: "Sales" | "Support" | "Marketing"
-  status: "Active" | "Inactive"
-  description?: string
-  createdAt: Date
+	id: string
+	name: string
+	type: 'Sales' | 'Support' | 'Marketing'
+	status: 'Active' | 'Inactive'
+	description?: string
+	createdAt: Date
 }
 
 interface CreateAgentRequest {
-  name: string
-  type: "Sales" | "Support" | "Marketing"
-  status: "Active" | "Inactive"
-  description?: string
+	name: string
+	type: 'Sales' | 'Support' | 'Marketing'
+	status: 'Active' | 'Inactive'
+	description?: string
 }
 ```
 
 ### **API Endpoints**
 
-| Method   | Endpoint           | Description              | Request Body |
-| -------- | ------------------ | ------------------------ | ------------ |
-| `GET`    | `/api/agents`      | Retrieve all agents      | - |
-| `GET`    | `/api/agents/:id`  | Get specific agent by ID | - |
-| `POST`   | `/api/agents`      | Create new agent         | `CreateAgentRequest` |
-| `PUT`    | `/api/agents/:id`  | Update existing agent    | `Partial<CreateAgentRequest>` |
-| `DELETE` | `/api/agents/:id`  | Delete agent             | - |
-| `POST`   | `/api/agents/:id/ask` | Ask question to agent | `{question: string}` |
-| `GET`    | `/api/health`      | Health check endpoint    | - |
+| Method   | Endpoint              | Description              | Request Body                  |
+| -------- | --------------------- | ------------------------ | ----------------------------- |
+| `GET`    | `/api/agents`         | Retrieve all agents      | -                             |
+| `GET`    | `/api/agents/:id`     | Get specific agent by ID | -                             |
+| `POST`   | `/api/agents`         | Create new agent         | `CreateAgentRequest`          |
+| `PUT`    | `/api/agents/:id`     | Update existing agent    | `Partial<CreateAgentRequest>` |
+| `DELETE` | `/api/agents/:id`     | Delete agent             | -                             |
+| `POST`   | `/api/agents/:id/ask` | Ask question to agent    | `{question: string}`          |
+| `GET`    | `/api/health`         | Health check endpoint    | -                             |
 
 ### **Request/Response Examples**
 
@@ -141,37 +141,37 @@ Content-Type: application/json
 
 ```json
 {
-  "agents": [
-    {
-      "id": "1",
-      "name": "The Grand Arosa Q&A Bot",
-      "type": "Support",
-      "status": "Active",
-      "description": "Hotel information and services bot",
-      "createdAt": "2025-07-31T21:00:00.000Z"
-    },
-    {
-      "id": "2",
-      "name": "Sales Assistant",
-      "type": "Sales",
-      "status": "Active",
-      "description": "Product sales and pricing support",
-      "createdAt": "2025-08-01T10:00:00.000Z"
-    },
-    {
-      "id": "3",
-      "name": "Marketing Bot",
-      "type": "Marketing",
-      "status": "Inactive",
-      "description": "Marketing strategy and campaign support",
-      "createdAt": "2025-08-01T11:00:00.000Z"
-    }
-  ],
-  "metadata": {
-    "nextId": 4,
-    "lastUpdated": "2025-08-01T12:00:00.000Z",
-    "version": "1.0.0"
-  }
+	"agents": [
+		{
+			"id": "1",
+			"name": "The Grand Arosa Q&A Bot",
+			"type": "Support",
+			"status": "Active",
+			"description": "Hotel information and services bot",
+			"createdAt": "2025-07-31T21:00:00.000Z"
+		},
+		{
+			"id": "2",
+			"name": "Sales Assistant",
+			"type": "Sales",
+			"status": "Active",
+			"description": "Product sales and pricing support",
+			"createdAt": "2025-08-01T10:00:00.000Z"
+		},
+		{
+			"id": "3",
+			"name": "Marketing Bot",
+			"type": "Marketing",
+			"status": "Inactive",
+			"description": "Marketing strategy and campaign support",
+			"createdAt": "2025-08-01T11:00:00.000Z"
+		}
+	],
+	"metadata": {
+		"nextId": 4,
+		"lastUpdated": "2025-08-01T12:00:00.000Z",
+		"version": "1.0.0"
+	}
 }
 ```
 
@@ -261,22 +261,22 @@ Responses: Swiss Alpine hotel information, amenities, services
 
 ### **Status Codes**
 
-| Code | Description | Example |
-|------|-------------|---------|
-| `200` | Success | Agent response returned |
-| `201` | Created | New agent created |
-| `400` | Bad Request | Missing required fields |
-| `403` | Forbidden | Agent is inactive |
-| `404` | Not Found | Agent doesn't exist |
-| `500` | Server Error | Internal server error |
+| Code  | Description  | Example                 |
+| ----- | ------------ | ----------------------- |
+| `200` | Success      | Agent response returned |
+| `201` | Created      | New agent created       |
+| `400` | Bad Request  | Missing required fields |
+| `403` | Forbidden    | Agent is inactive       |
+| `404` | Not Found    | Agent doesn't exist     |
+| `500` | Server Error | Internal server error   |
 
 ### **Error Response Format**
 
 ```json
 {
-  "error": "Error message",
-  "agentType": "Sales",
-  "status": "Inactive"
+	"error": "Error message",
+	"agentType": "Sales",
+	"status": "Inactive"
 }
 ```
 
@@ -288,14 +288,14 @@ Create `railway.json`:
 
 ```json
 {
-  "$schema": "https://railway.app/railway.schema.json",
-  "build": {
-    "builder": "nixpacks"
-  },
-  "deploy": {
-    "numReplicas": 1,
-    "restartPolicyType": "ON_FAILURE"
-  }
+	"$schema": "https://railway.app/railway.schema.json",
+	"build": {
+		"builder": "nixpacks"
+	},
+	"deploy": {
+		"numReplicas": 1,
+		"restartPolicyType": "ON_FAILURE"
+	}
 }
 ```
 
@@ -313,6 +313,53 @@ FRONTEND_URL=<your-frontend-url>
 - **CORS**: Configured for frontend domain
 - **Error Handling**: Comprehensive error responses
 - **Health Check**: `/api/health` endpoint for monitoring
+
+## 🧪 Testing
+
+### **Test Suite**
+
+The backend includes a comprehensive **Jest test suite** with **13 tests** covering all API endpoints and functionality:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+### **Test Coverage**
+
+```
+✅ Agent CRUD Operations (5 tests)
+  • GET /api/agents - List all agents
+  • GET /api/agents/:id - Get specific agent
+  • POST /api/agents - Create new agent
+  • PUT /api/agents/:id - Update agent
+  • DELETE /api/agents/:id - Delete agent
+
+✅ Agent Chat Functionality (6 tests)
+  • POST /api/agents/:id/ask - Active agent responses
+  • POST /api/agents/:id/ask - Inactive agent error handling
+  • Agent type-specific response validation
+  • Hotel bot protection testing
+
+✅ Error Handling (2 tests)
+  • Invalid agent ID handling
+  • Malformed request validation
+```
+
+### **Test Results**
+
+```bash
+Test Suites: 1 passed, 1 total
+Tests:       13 passed, 13 total
+Snapshots:   0 total
+Time:        1.216s
+```
 
 ## 📈 Testing
 
