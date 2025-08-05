@@ -43,6 +43,7 @@ This project implements a sophisticated agent management system with support for
 ### **Backend**
 
 - **Express.js** with TypeScript
+- **Middleware Layer** for CORS, error handling, and request logging
 - **JSON File Database** (development) / **In-Memory** (production)
 - **CORS** configuration for cross-origin requests
 - **Railway** deployment with automatic builds
@@ -158,6 +159,7 @@ ailean-assignment/
 ├── backend/                 # Express.js API server
 │   ├── src/
 │   │   ├── controllers/     # API route handlers
+│   │   ├── middleware/      # Express middleware (CORS, error handling, logging)
 │   │   ├── models/          # TypeScript interfaces
 │   │   ├── routes/          # Express routes
 │   │   ├── services/        # Business logic & agent responses

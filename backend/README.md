@@ -46,8 +46,30 @@ Hotel Q&A Bot:
 - **AgentService**: Business logic for agent CRUD operations and response generation
 - **Multi-Agent Response Engine**: Type-specific keyword matching and response generation
 - **JSON Database**: File-based persistence (development) / In-memory (production)
-- **CORS Middleware**: Cross-origin request handling
+- **Middleware Layer**: CORS handling, error management, and request logging
 - **TypeScript**: Full type safety and modern JavaScript features
+
+### **Middleware Architecture**
+
+The backend includes a comprehensive middleware system for request handling:
+
+#### **CORS Middleware** (`cors.ts`)
+
+- **Development**: Allows all origins for local testing
+- **Production**: Strict origin validation using `FRONTEND_URL` environment variable
+- **Security**: Blocks requests without proper origin headers in production
+
+#### **Error Handler** (`errorHandler.ts`)
+
+- **CORS Error Handling**: Specific handling for CORS policy violations
+- **Global Error Catching**: Centralized error processing with proper HTTP status codes
+- **Error Logging**: Comprehensive error logging for debugging
+
+#### **Request Logger** (`logging.ts`)
+
+- **Request Tracking**: Logs all incoming requests with timestamps
+- **Method & Path Logging**: Captures HTTP method and request path
+- **Development Debugging**: Helps track API usage during development
 
 ### **Agent Model**
 
